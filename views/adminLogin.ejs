@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f1e8">
+  <title>Connexion administrateur — 5 Sens</title>
+  <link rel="stylesheet" href="/css/homePage.css">
+</head>
+<body>
+  <%- include("partials/header") %>
+
+  <main class="page-shell inner-page">
+    <section class="page-intro" aria-labelledby="page-title">
+      <p class="eyebrow">Espace privé</p>
+      <h1 id="page-title">Connexion</h1>
+      <p class="hero-description">Connecte-toi pour consulter les réservations.</p>
+    </section>
+
+    <form class="reservation-form login-form" action="/dashboard/login" method="post">
+      <% if (errorMessage) { %>
+        <p class="form-message form-error" role="alert"><%= errorMessage %></p>
+      <% } %>
+      <div class="form-field">
+        <label for="username">Identifiant</label>
+        <input id="username" name="username" type="text" autocomplete="username" required>
+      </div>
+      <div class="form-field">
+        <label for="password">Mot de passe</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="primary-link" type="submit">Se connecter</button>
+    </form>
+    <p class="setup-note">Pour créer ou réinitialiser un compte, lance <code>node scripts/create-admin.js</code> dans un terminal interactif. La saisie du mot de passe est masquée.</p>
+  </main>
+</body>
+</html>

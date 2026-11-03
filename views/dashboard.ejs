@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f1e8">
+  <title>Dashboard — 5 Sens</title>
+  <link rel="stylesheet" href="/css/homePage.css">
+</head>
+<body>
+  <%- include("partials/header") %>
+
+  <main class="page-shell inner-page dashboard-page">
+    <section class="page-intro" aria-labelledby="page-title">
+      <p class="eyebrow">Espace administrateur · <%= adminUsername %></p>
+      <h1 id="page-title">Réservations</h1>
+      <p class="hero-description"><%= reservations.length %> réservation<%= reservations.length === 1 ? "" : "s" %> enregistrée<%= reservations.length === 1 ? "" : "s" %>.</p>
+      <a class="primary-link" href="/dashboard/download">Télécharger le CSV</a>
+      <form class="logout-form" action="/dashboard/logout" method="post">
+        <button class="text-button" type="submit">Se déconnecter</button>
+      </form>
+    </section>
+
+    <% if (reservations.length === 0) { %>
+      <p class="empty-state">Aucune réservation pour le moment.</p>
+    <% } else { %>
+      <div class="table-wrapper">
+        <table class="reservation-table">
+          <thead>
+            <tr>
+              <th scope="col">Nom</th>
+              <th scope="col">Prénom</th>
+              <th scope="col">Adresse e-mail</th>
+              <th scope="col">Téléphone</th>
+              <th scope="col">Personnes</th>
+              <th scope="col">Boissons</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% reservations.forEach((reservation) => { %>
+              <tr>
+                <td><%= reservation.nom %></td>
+                <td><%= reservation.prenom %></td>
+                <td><a href="mailto:<%= reservation.email %>"><%= reservation.email %></a></td>
+                <td><a href="tel:<%= reservation.telephone %>"><%= reservation.telephone %></a></td>
+                <td><%= reservation.nombrePersonnes || "—" %></td>
+                <td><%= reservation.nombreBoissons || "—" %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f1e8">
+  <title>Réservation — 5 Sens</title>
+  <link rel="stylesheet" href="/css/homePage.css">
+</head>
+<body>
+  <%- include("partials/header") %>
+
+  <main class="page-shell inner-page">
+    <section class="page-intro" aria-labelledby="page-title">
+      <p class="eyebrow">Les 5 Sens</p>
+      <h1 id="page-title">Réservation</h1>
+      <p class="hero-description">Laissez-nous vos coordonnées pour préparer votre demande.</p>
+    </section>
+
+    <% if (successMessage) { %>
+      <p class="form-message form-success" role="status"><%= successMessage %></p>
+    <% } %>
+    <form class="reservation-form" action="/data/reservations" method="post">
+      <% if (errorMessage) { %>
+        <p class="form-message form-error" role="alert"><%= errorMessage %></p>
+      <% } %>
+      <div class="form-field">
+        <label for="nom">Nom</label>
+        <input id="nom" name="nom" type="text" autocomplete="family-name" required>
+      </div>
+      <div class="form-field">
+        <label for="prenom">Prénom</label>
+        <input id="prenom" name="prenom" type="text" autocomplete="given-name" required>
+      </div>
+      <div class="form-field">
+        <label for="email">Adresse e-mail</label>
+        <input id="email" name="email" type="email" autocomplete="email" required>
+      </div>
+      <div class="form-field">
+        <label for="telephone">Numéro de téléphone</label>
+        <input id="telephone" name="telephone" type="tel" autocomplete="tel" required>
+      </div>
+      <div class="form-field">
+        <label for="nombrePersonnes">Nombre de personnes</label>
+        <input id="nombrePersonnes" name="nombrePersonnes" type="number" min="1" step="1" inputmode="numeric" required>
+      </div>
+      <div class="form-field">
+        <label for="nombreBoissons">Nombre total de boissons</label>
+        <input id="nombreBoissons" name="nombreBoissons" type="number" min="0" step="1" inputmode="numeric" required>
+      </div>
+      <button class="primary-link" type="submit">Envoyer la réservation</button>
+    </form>
+  </main>
+</body>
+</html>
