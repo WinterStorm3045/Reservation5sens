@@ -15,6 +15,10 @@ const headers = [
   "telephone",
   "nombrePersonnes",
   "nombreBoissons",
+  "tarifsPersonnes",
+  "totalBuffets",
+  "ticketsInclus",
+  "boissonsSupplementaires",
 ];
 let reservationQueue = Promise.resolve();
 
@@ -88,7 +92,16 @@ function lireChamp(form, name) {
 }
 
 function validerReservation(reservation) {
-  if (headers.some((field) => reservation[field].length === 0)) {
+  const formFields = [
+    "nom",
+    "prenom",
+    "email",
+    "telephone",
+    "nombrePersonnes",
+    "nombreBoissons",
+    "tarifsPersonnes",
+  ];
+  if (formFields.some((field) => reservation[field].length === 0)) {
     return "Tous les champs sont obligatoires.";
   }
   if (reservation.nom.length > 120 || reservation.prenom.length > 120) {
@@ -100,11 +113,38 @@ function validerReservation(reservation) {
   if (reservation.telephone.length > 40) {
     return "Le numéro de téléphone ne peut pas dépasser 40 caractères.";
   }
-  if (!/^\d+$/.test(reservation.nombrePersonnes) || !Number.isSafeInteger(Number(reservation.nombrePersonnes)) || Number(reservation.nombrePersonnes) < 1) {
-    return "Le nombre de personnes doit être un entier supérieur ou égal à 1.";
+  if (
+    !/^\d+$/.test(reservation.nombrePersonnes) ||
+    !Number.isSafeInteger(Number(reservation.nombrePersonnes)) ||
+    Number(reservation.nombrePersonnes) < 1 ||
+    Number(reservation.nombrePersonnes) > 12
+  ) {
+    return "Le nombre de personnes doit être un entier compris entre 1 et 12.";
   }
   if (!/^\d+$/.test(reservation.nombreBoissons) || !Number.isSafeInteger(Number(reservation.nombreBoissons))) {
     return "Le nombre total de boissons doit être un entier positif ou nul.";
+  }
+
+  let tarifsPersonnes;
+  try {
+    tarifsPersonnes = JSON.parse(reservation.tarifsPersonnes);
+  } catch {
+    return "Veuillez sélectionner un tarif pour chaque personne.";
+  }
+  if (
+    !Array.isArray(tarifsPersonnes) ||
+    tarifsPersonnes.length !== Number(reservation.nombrePersonnes) ||
+    tarifsPersonnes.some((tarif) => tarif !== "interne" && tarif !== "externe")
+  ) {
+    return "Veuillez sélectionner un tarif valide pour chaque personne.";
+  }
+
+  const ticketsInclus = tarifsPersonnes.reduce(
+    (total, tarif) => total + (tarif === "interne" ? 1 : 2),
+    0,
+  );
+  if (Number(reservation.nombreBoissons) < ticketsInclus) {
+    return `Le nombre de tickets boisson ne peut pas être inférieur aux ${ticketsInclus} ticket${ticketsInclus > 1 ? "s" : ""} inclus.`;
   }
   return null;
 }
@@ -118,6 +158,7 @@ async function recevoirRequeteReservation(req, res, next) {
     telephone: lireChamp(form, "telephone"),
     nombrePersonnes: lireChamp(form, "nombrePersonnes"),
     nombreBoissons: lireChamp(form, "nombreBoissons"),
+    tarifsPersonnes: lireChamp(form, "tarifsPersonnes"),
   };
   const validationError = validerReservation(reservation);
   if (validationError) {
@@ -126,6 +167,22 @@ async function recevoirRequeteReservation(req, res, next) {
       successMessage: null,
     });
   }
+
+  const tarifsPersonnes = JSON.parse(reservation.tarifsPersonnes);
+  const ticketsInclus = tarifsPersonnes.reduce(
+    (total, tarif) => total + (tarif === "interne" ? 1 : 2),
+    0,
+  );
+  reservation.totalBuffets = String(
+    tarifsPersonnes.reduce(
+      (total, tarif) => total + (tarif === "interne" ? 18 : 25),
+      0,
+    ),
+  );
+  reservation.ticketsInclus = String(ticketsInclus);
+  reservation.boissonsSupplementaires = String(
+    Number(reservation.nombreBoissons) - ticketsInclus,
+  );
 
   const operation = reservationQueue.then(async () => {
     if (await verifierReservation(reservation.email)) {

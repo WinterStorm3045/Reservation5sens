@@ -17,6 +17,10 @@ const reservationHeaders = [
   "telephone",
   "nombrePersonnes",
   "nombreBoissons",
+  "tarifsPersonnes",
+  "totalBuffets",
+  "ticketsInclus",
+  "boissonsSupplementaires",
 ];
 const loginView = path.join(__dirname, "../views/adminLogin.ejs");
 const dashboardView = path.join(__dirname, "../views/dashboard.ejs");

@@ -14,7 +14,7 @@
     <section class="page-intro" aria-labelledby="page-title">
       <p class="eyebrow">Les 5 Sens</p>
       <h1 id="page-title">Réservation</h1>
-      <p class="hero-description">Laissez-nous vos coordonnées pour préparer votre demande.</p>
+      <p class="hero-description">Choisissez le tarif de chaque personne et indiquez le nombre total de tickets boisson souhaité.</p>
     </section>
 
     <% if (successMessage) { %>
@@ -40,16 +40,133 @@
         <label for="telephone">Numéro de téléphone</label>
         <input id="telephone" name="telephone" type="tel" autocomplete="tel" required>
       </div>
+      <input id="nombrePersonnes" name="nombrePersonnes" type="hidden" value="1">
+      <input id="tarifsPersonnes" name="tarifsPersonnes" type="hidden" value='["interne"]'>
       <div class="form-field">
-        <label for="nombrePersonnes">Nombre de personnes</label>
-        <input id="nombrePersonnes" name="nombrePersonnes" type="number" min="1" step="1" inputmode="numeric" required>
+        <div class="choice-heading">
+          <span class="field-label" id="people-label">Nombre de personnes</span>
+          <div class="stepper" role="group" aria-labelledby="people-label">
+            <button type="button" id="people-minus" aria-label="Retirer une personne">−</button>
+            <output id="people-count" aria-live="polite">1</output>
+            <button type="button" id="people-plus" aria-label="Ajouter une personne">+</button>
+          </div>
+        </div>
+        <div class="people-list" id="people-list"></div>
       </div>
       <div class="form-field">
-        <label for="nombreBoissons">Nombre total de boissons</label>
-        <input id="nombreBoissons" name="nombreBoissons" type="number" min="0" step="1" inputmode="numeric" required>
+        <div class="choice-heading">
+          <label for="nombreBoissons">Nombre total de tickets boisson</label>
+          <div class="stepper" role="group" aria-label="Nombre total de tickets boisson">
+            <button type="button" id="drinks-minus" aria-label="Retirer un ticket boisson">−</button>
+            <output id="drinks-count" aria-live="polite">1</output>
+            <button type="button" id="drinks-plus" aria-label="Ajouter un ticket boisson">+</button>
+          </div>
+        </div>
+        <input id="nombreBoissons" name="nombreBoissons" type="hidden" value="1">
+        <p class="field-hint" id="drinks-detail">1 ticket inclus dans le tarif choisi. Ticket supplémentaire : 5 € à régler sur place.</p>
+      </div>
+      <div class="booking-total" aria-live="polite">
+        <div><strong>Total buffets à prépayer</strong><small id="total-detail">1 interne</small></div>
+        <output id="total-amount">18 €</output>
       </div>
       <button class="primary-link" type="submit">Envoyer la réservation</button>
     </form>
   </main>
+  <script>
+    (() => {
+      const prices = { interne: 18, externe: 25 };
+      const includedTickets = { interne: 1, externe: 2 };
+      const maxPeople = 12;
+      let people = ["interne"];
+      let drinkCount = 1;
+      const peopleList = document.getElementById("people-list");
+
+      function updateTotals() {
+        const internalCount = people.filter((type) => type === "interne").length;
+        const externalCount = people.length - internalCount;
+        const buffetTotal = internalCount * prices.interne + externalCount * prices.externe;
+        const includedCount = people.reduce((total, type) => total + includedTickets[type], 0);
+        drinkCount = Math.max(drinkCount, includedCount);
+
+        document.getElementById("nombrePersonnes").value = String(people.length);
+        document.getElementById("tarifsPersonnes").value = JSON.stringify(people);
+        document.getElementById("people-count").textContent = String(people.length);
+        document.getElementById("nombreBoissons").value = String(drinkCount);
+        document.getElementById("drinks-count").textContent = String(drinkCount);
+        document.getElementById("drinks-detail").textContent =
+          `${includedCount} ticket${includedCount > 1 ? "s" : ""} inclus · ` +
+          `${Math.max(0, drinkCount - includedCount)} supplémentaire${drinkCount - includedCount > 1 ? "s" : ""} à 5 € pièce, à régler sur place.`;
+        document.getElementById("total-amount").textContent = `${buffetTotal} €`;
+        const detail = [];
+        if (internalCount) detail.push(`${internalCount} interne${internalCount > 1 ? "s" : ""}`);
+        if (externalCount) detail.push(`${externalCount} externe${externalCount > 1 ? "s" : ""}`);
+        document.getElementById("total-detail").textContent = detail.join(" · ");
+        document.getElementById("people-minus").disabled = people.length <= 1;
+        document.getElementById("people-plus").disabled = people.length >= maxPeople;
+        document.getElementById("drinks-minus").disabled = drinkCount <= includedCount;
+      }
+
+      function renderPeople() {
+        peopleList.replaceChildren();
+        people.forEach((type, index) => {
+          const row = document.createElement("div");
+          row.className = "person-choice";
+          const person = document.createElement("span");
+          person.className = "person-number";
+          person.textContent = `Pers. ${index + 1}`;
+          const choices = document.createElement("div");
+          choices.className = "tariff-choices";
+          choices.setAttribute("role", "radiogroup");
+          choices.setAttribute("aria-label", `Tarif personne ${index + 1}`);
+
+          [["interne", "Interne · 18 €"], ["externe", "Externe · 25 €"]].forEach(([value, labelText]) => {
+            const id = `person-${index}-${value}`;
+            const input = document.createElement("input");
+            input.type = "radio";
+            input.name = `tarif-personne-${index}`;
+            input.id = id;
+            input.value = value;
+            input.checked = type === value;
+            input.addEventListener("change", () => {
+              people[index] = value;
+              updateTotals();
+            });
+            const label = document.createElement("label");
+            label.htmlFor = id;
+            label.textContent = labelText;
+            choices.append(input, label);
+          });
+          row.append(person, choices);
+          peopleList.append(row);
+        });
+        updateTotals();
+      }
+
+      document.getElementById("people-plus").addEventListener("click", () => {
+        if (people.length < maxPeople) {
+          people.push("externe");
+          renderPeople();
+        }
+      });
+      document.getElementById("people-minus").addEventListener("click", () => {
+        if (people.length > 1) {
+          people.pop();
+          renderPeople();
+        }
+      });
+      document.getElementById("drinks-plus").addEventListener("click", () => {
+        drinkCount += 1;
+        updateTotals();
+      });
+      document.getElementById("drinks-minus").addEventListener("click", () => {
+        const includedCount = people.reduce((total, type) => total + includedTickets[type], 0);
+        if (drinkCount > includedCount) {
+          drinkCount -= 1;
+          updateTotals();
+        }
+      });
+      renderPeople();
+    })();
+  </script>
 </body>
 </html>

@@ -33,7 +33,9 @@
               <th scope="col">Adresse e-mail</th>
               <th scope="col">Téléphone</th>
               <th scope="col">Personnes</th>
-              <th scope="col">Boissons</th>
+              <th scope="col">Tarifs choisis</th>
+              <th scope="col">Buffets à prépayer</th>
+              <th scope="col">Boissons (total)</th>
             </tr>
           </thead>
           <tbody>
@@ -44,6 +46,8 @@
                 <td><a href="mailto:<%= reservation.email %>"><%= reservation.email %></a></td>
                 <td><a href="tel:<%= reservation.telephone %>"><%= reservation.telephone %></a></td>
                 <td><%= reservation.nombrePersonnes || "—" %></td>
+                <td><%= reservation.tarifsPersonnes || "—" %></td>
+                <td><%= reservation.totalBuffets ? `${reservation.totalBuffets} €` : "—" %></td>
                 <td><%= reservation.nombreBoissons || "—" %></td>
               </tr>
             <% }) %>

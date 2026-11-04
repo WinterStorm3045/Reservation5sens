@@ -193,6 +193,20 @@ h1::after {
   line-height: 1.8;
 }
 
+.event-facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  margin: 0 auto 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.event-facts strong {
+  color: var(--ink);
+}
+
 .primary-link {
   min-height: 50px;
 }
@@ -221,8 +235,168 @@ h1::after {
   line-height: 1.8;
 }
 
+.sense-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  margin: 28px 0;
+  border: 1px solid rgba(38, 57, 47, .16);
+  background: rgba(38, 57, 47, .16);
+  text-align: left;
+}
+
+.sense-card {
+  min-width: 0;
+  padding: 18px 12px;
+  background: var(--paper);
+}
+
+.sense-card h3 {
+  margin: 0 0 8px;
+  color: var(--orange);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.sense-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.text-link {
+  color: var(--green);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .inner-page {
   padding-bottom: 80px;
+}
+
+.info-section {
+  display: grid;
+  gap: 24px;
+  margin: 0 auto 56px;
+}
+
+.info-section > h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: -.04em;
+  text-align: center;
+}
+
+.section-description {
+  max-width: 680px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+  text-align: center;
+}
+
+.facts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px 40px;
+}
+
+.fact {
+  display: grid;
+  gap: 4px;
+}
+
+.fact strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 23px;
+  font-weight: 400;
+}
+
+.fact > span:last-child:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.fact a {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.price-card {
+  display: grid;
+  gap: 18px;
+  padding: 28px;
+  border: 1px solid rgba(38, 57, 47, .16);
+}
+
+.price-item {
+  display: grid;
+  gap: 4px;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.price-row strong {
+  font-size: 14px;
+}
+
+.price-row span {
+  color: var(--orange);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+}
+
+.price-item p,
+.price-note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.price-note {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(38, 57, 47, .16);
+}
+
+.price-note p {
+  margin: 0;
+}
+
+.contact-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 18px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(38, 57, 47, .16);
+  text-align: center;
+}
+
+.contact-section .eyebrow {
+  width: 100%;
+}
+
+.contact-section > a:not(.primary-link) {
+  color: var(--green);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .page-intro {
@@ -276,6 +450,141 @@ h1::after {
   color: var(--ink);
   font-size: 13px;
   font-weight: 600;
+}
+
+.choice-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.field-label {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(38, 57, 47, .28);
+}
+
+.stepper button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 20px;
+}
+
+.stepper button:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: -2px;
+}
+
+.stepper button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.stepper output {
+  min-width: 42px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.people-list {
+  display: grid;
+  border-top: 1px solid rgba(38, 57, 47, .16);
+}
+
+.person-choice {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(38, 57, 47, .16);
+}
+
+.person-number {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  font-style: italic;
+}
+
+.tariff-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid rgba(38, 57, 47, .2);
+}
+
+.tariff-choices input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.tariff-choices label {
+  padding: 10px 6px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+  text-align: center;
+}
+
+.tariff-choices input:checked + label {
+  background: var(--green);
+  color: var(--paper);
+}
+
+.tariff-choices input:focus-visible + label {
+  outline: 2px solid var(--orange);
+  outline-offset: -2px;
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.booking-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(38, 57, 47, .06);
+}
+
+.booking-total strong {
+  font-size: 13px;
+}
+
+.booking-total small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.booking-total output {
+  color: var(--green);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
 }
 
 .form-field input {
@@ -429,6 +738,27 @@ h1::after {
     padding: 28px 8px;
   }
 
+  .sense-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sense-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .info-section {
+    margin-bottom: 44px;
+  }
+
+  .facts-grid {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .price-card {
+    padding: 22px;
+  }
+
   .page-intro {
     margin: 56px auto 32px;
   }
@@ -443,6 +773,11 @@ h1::after {
   .reservation-table td {
     padding: 12px;
     white-space: nowrap;
+  }
+
+  .person-choice {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .form-message,
