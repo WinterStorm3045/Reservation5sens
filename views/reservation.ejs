@@ -14,7 +14,7 @@
     <section class="page-intro" aria-labelledby="page-title">
       <p class="eyebrow">Les 5 Sens</p>
       <h1 id="page-title">Réservation</h1>
-      <p class="hero-description">Choisissez le tarif de chaque personne et indiquez le nombre total de tickets boisson souhaité.</p>
+      <p class="hero-description">Choisissez le tarif de chaque personne.</p>
     </section>
 
     <% if (successMessage) { %>
@@ -53,18 +53,6 @@
         </div>
         <div class="people-list" id="people-list"></div>
       </div>
-      <div class="form-field">
-        <div class="choice-heading">
-          <label for="nombreBoissons">Nombre total de tickets boisson</label>
-          <div class="stepper" role="group" aria-label="Nombre total de tickets boisson">
-            <button type="button" id="drinks-minus" aria-label="Retirer un ticket boisson">−</button>
-            <output id="drinks-count" aria-live="polite">1</output>
-            <button type="button" id="drinks-plus" aria-label="Ajouter un ticket boisson">+</button>
-          </div>
-        </div>
-        <input id="nombreBoissons" name="nombreBoissons" type="hidden" value="1">
-        <p class="field-hint" id="drinks-detail">1 ticket inclus dans le tarif choisi. Ticket supplémentaire : 5 € à régler sur place.</p>
-      </div>
       <div class="booking-total" aria-live="polite">
         <div><strong>Total buffets à prépayer</strong><small id="total-detail">1 interne</small></div>
         <output id="total-amount">18 €</output>
@@ -75,27 +63,18 @@
   <script>
     (() => {
       const prices = { interne: 18, externe: 25 };
-      const includedTickets = { interne: 1, externe: 2 };
       const maxPeople = 12;
       let people = ["interne"];
-      let drinkCount = 1;
       const peopleList = document.getElementById("people-list");
 
       function updateTotals() {
         const internalCount = people.filter((type) => type === "interne").length;
         const externalCount = people.length - internalCount;
         const buffetTotal = internalCount * prices.interne + externalCount * prices.externe;
-        const includedCount = people.reduce((total, type) => total + includedTickets[type], 0);
-        drinkCount = Math.max(drinkCount, includedCount);
 
         document.getElementById("nombrePersonnes").value = String(people.length);
         document.getElementById("tarifsPersonnes").value = JSON.stringify(people);
         document.getElementById("people-count").textContent = String(people.length);
-        document.getElementById("nombreBoissons").value = String(drinkCount);
-        document.getElementById("drinks-count").textContent = String(drinkCount);
-        document.getElementById("drinks-detail").textContent =
-          `${includedCount} ticket${includedCount > 1 ? "s" : ""} inclus · ` +
-          `${Math.max(0, drinkCount - includedCount)} supplémentaire${drinkCount - includedCount > 1 ? "s" : ""} à 5 € pièce, à régler sur place.`;
         document.getElementById("total-amount").textContent = `${buffetTotal} €`;
         const detail = [];
         if (internalCount) detail.push(`${internalCount} interne${internalCount > 1 ? "s" : ""}`);
@@ -103,7 +82,6 @@
         document.getElementById("total-detail").textContent = detail.join(" · ");
         document.getElementById("people-minus").disabled = people.length <= 1;
         document.getElementById("people-plus").disabled = people.length >= maxPeople;
-        document.getElementById("drinks-minus").disabled = drinkCount <= includedCount;
       }
 
       function renderPeople() {
@@ -152,17 +130,6 @@
         if (people.length > 1) {
           people.pop();
           renderPeople();
-        }
-      });
-      document.getElementById("drinks-plus").addEventListener("click", () => {
-        drinkCount += 1;
-        updateTotals();
-      });
-      document.getElementById("drinks-minus").addEventListener("click", () => {
-        const includedCount = people.reduce((total, type) => total + includedTickets[type], 0);
-        if (drinkCount > includedCount) {
-          drinkCount -= 1;
-          updateTotals();
         }
       });
       renderPeople();

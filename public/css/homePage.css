@@ -666,6 +666,38 @@ h1::after {
   text-underline-offset: 3px;
 }
 
+.balance-controls,
+.balance-cell form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.balance-input-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.balance-input-label input {
+  width: 90px;
+  padding: 7px;
+}
+
+.balance-status {
+  display: inline-block;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.balance-paid {
+  color: #218739;
+}
+
+.balance-due {
+  color: #c62828;
+}
+
 .logout-form {
   margin-top: 16px;
 }

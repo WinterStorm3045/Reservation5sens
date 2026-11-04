@@ -14,11 +14,9 @@ const headers = [
   "email",
   "telephone",
   "nombrePersonnes",
-  "nombreBoissons",
   "tarifsPersonnes",
   "totalBuffets",
-  "ticketsInclus",
-  "boissonsSupplementaires",
+  "resteACharge",
 ];
 let reservationQueue = Promise.resolve();
 
@@ -42,9 +40,20 @@ async function lireReservations() {
   if (!requiredHeaders.every((header) => columns.includes(header))) {
     throw new Error("Le fichier CSV des réservations ne contient pas les colonnes attendues.");
   }
-  return rows.slice(1).map((row) =>
-    Object.fromEntries(columns.map((column, index) => [column, row[index] || ""])),
-  );
+  return rows.slice(1).map((row) => {
+    const reservation = Object.fromEntries(
+      columns.map((column, index) => [column, row[index] || ""]),
+    );
+    const storedBalance = Number(reservation.resteACharge);
+    if (reservation.resteACharge !== "" && Number.isFinite(storedBalance) && storedBalance >= 0) {
+      reservation.resteACharge = String(storedBalance);
+    } else if (reservation.paye === "oui") {
+      reservation.resteACharge = "0";
+    } else {
+      reservation.resteACharge = reservation.totalBuffets || "";
+    }
+    return reservation;
+  });
 }
 
 async function verifierReservation(email) {
@@ -71,9 +80,14 @@ async function ajouterReservation(reservation) {
   }
 
   const allReservations = [...existingReservations, reservation];
+  await sauvegarderReservations(allReservations);
+}
+
+async function sauvegarderReservations(reservations) {
+  await fs.mkdir(path.dirname(reservationsFile), { recursive: true });
   const lines = [
     encoderLigneCsv(headers),
-    ...allReservations.map((entry) =>
+    ...reservations.map((entry) =>
       encoderLigneCsv(headers.map((header) => entry[header] ?? "")),
     ),
   ];
@@ -87,6 +101,27 @@ async function ajouterReservation(reservation) {
   }
 }
 
+function mettreAJourResteACharge(email, resteACharge) {
+  const operation = reservationQueue.then(async () => {
+    const reservations = await lireReservations();
+    const reservation = reservations.find(
+      (entry) => entry.email.trim().toLowerCase() === email.trim().toLowerCase(),
+    );
+    if (!reservation) {
+      return false;
+    }
+
+    reservation.resteACharge = resteACharge;
+    await sauvegarderReservations(reservations);
+    return true;
+  });
+  reservationQueue = operation.then(
+    () => undefined,
+    () => undefined,
+  );
+  return operation;
+}
+
 function lireChamp(form, name) {
   return typeof form[name] === "string" ? form[name].trim() : "";
 }
@@ -98,7 +133,6 @@ function validerReservation(reservation) {
     "email",
     "telephone",
     "nombrePersonnes",
-    "nombreBoissons",
     "tarifsPersonnes",
   ];
   if (formFields.some((field) => reservation[field].length === 0)) {
@@ -121,10 +155,6 @@ function validerReservation(reservation) {
   ) {
     return "Le nombre de personnes doit être un entier compris entre 1 et 12.";
   }
-  if (!/^\d+$/.test(reservation.nombreBoissons) || !Number.isSafeInteger(Number(reservation.nombreBoissons))) {
-    return "Le nombre total de boissons doit être un entier positif ou nul.";
-  }
-
   let tarifsPersonnes;
   try {
     tarifsPersonnes = JSON.parse(reservation.tarifsPersonnes);
@@ -139,13 +169,6 @@ function validerReservation(reservation) {
     return "Veuillez sélectionner un tarif valide pour chaque personne.";
   }
 
-  const ticketsInclus = tarifsPersonnes.reduce(
-    (total, tarif) => total + (tarif === "interne" ? 1 : 2),
-    0,
-  );
-  if (Number(reservation.nombreBoissons) < ticketsInclus) {
-    return `Le nombre de tickets boisson ne peut pas être inférieur aux ${ticketsInclus} ticket${ticketsInclus > 1 ? "s" : ""} inclus.`;
-  }
   return null;
 }
 
@@ -157,7 +180,6 @@ async function recevoirRequeteReservation(req, res, next) {
     email: lireChamp(form, "email"),
     telephone: lireChamp(form, "telephone"),
     nombrePersonnes: lireChamp(form, "nombrePersonnes"),
-    nombreBoissons: lireChamp(form, "nombreBoissons"),
     tarifsPersonnes: lireChamp(form, "tarifsPersonnes"),
   };
   const validationError = validerReservation(reservation);
@@ -169,21 +191,13 @@ async function recevoirRequeteReservation(req, res, next) {
   }
 
   const tarifsPersonnes = JSON.parse(reservation.tarifsPersonnes);
-  const ticketsInclus = tarifsPersonnes.reduce(
-    (total, tarif) => total + (tarif === "interne" ? 1 : 2),
-    0,
-  );
   reservation.totalBuffets = String(
     tarifsPersonnes.reduce(
       (total, tarif) => total + (tarif === "interne" ? 18 : 25),
       0,
     ),
   );
-  reservation.ticketsInclus = String(ticketsInclus);
-  reservation.boissonsSupplementaires = String(
-    Number(reservation.nombreBoissons) - ticketsInclus,
-  );
-
+  reservation.resteACharge = reservation.totalBuffets;
   const operation = reservationQueue.then(async () => {
     if (await verifierReservation(reservation.email)) {
       return false;
@@ -212,4 +226,4 @@ async function recevoirRequeteReservation(req, res, next) {
 
 router.post("/reservations", recevoirRequeteReservation);
 
-module.exports = { router, lireReservations, reservationsFile };
+module.exports = { router, lireReservations, reservationsFile, mettreAJourResteACharge };

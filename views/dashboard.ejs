@@ -35,7 +35,7 @@
               <th scope="col">Personnes</th>
               <th scope="col">Tarifs choisis</th>
               <th scope="col">Buffets à prépayer</th>
-              <th scope="col">Boissons (total)</th>
+              <th scope="col">Reste à charge</th>
             </tr>
           </thead>
           <tbody>
@@ -48,7 +48,31 @@
                 <td><%= reservation.nombrePersonnes || "—" %></td>
                 <td><%= reservation.tarifsPersonnes || "—" %></td>
                 <td><%= reservation.totalBuffets ? `${reservation.totalBuffets} €` : "—" %></td>
-                <td><%= reservation.nombreBoissons || "—" %></td>
+                <td class="balance-cell">
+                  <div class="balance-controls">
+                    <form action="/dashboard/balance" method="post">
+                      <input type="hidden" name="email" value="<%= reservation.email %>">
+                      <label class="balance-input-label">
+                        <input
+                          type="number"
+                          name="resteACharge"
+                          min="0"
+                          step="0.01"
+                          value="<%= reservation.resteACharge %>"
+                          aria-label="Reste à charge pour <%= reservation.prenom %> <%= reservation.nom %>"
+                          required
+                        >
+                        <span>€</span>
+                      </label>
+                      <button class="text-button" type="submit">Enregistrer</button>
+                    </form>
+                    <% if (reservation.resteACharge !== "" && Number(reservation.resteACharge) === 0) { %>
+                      <span class="balance-status balance-paid" role="img" aria-label="Reste à charge nul">✓</span>
+                    <% } else { %>
+                      <span class="balance-status balance-due" role="img" aria-label="Reste à charge non nul">✗</span>
+                    <% } %>
+                  </div>
+                </td>
               </tr>
             <% }) %>
           </tbody>

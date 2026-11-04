@@ -92,8 +92,8 @@ async function creerAdministrateur() {
   }
 
   const password = await demanderMotDePasse();
-  if (Array.from(password).length < 12 || Buffer.byteLength(password, "utf8") > 72) {
-    throw new Error("Le mot de passe doit contenir au moins 12 caractères et 72 octets maximum.");
+  if (password.length === 0 || Buffer.byteLength(password, "utf8") > 72) {
+    throw new Error("Le mot de passe ne peut pas être vide ni dépasser 72 octets.");
   }
 
   const { columns, admins } = await lireAdministrateurs();

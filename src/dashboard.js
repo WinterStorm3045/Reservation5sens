@@ -2,7 +2,7 @@ const express = require("express");
 const fs = require("fs/promises");
 const path = require("path");
 const bcrypt = require("bcrypt");
-const { lireReservations, reservationsFile } = require("./data");
+const { lireReservations, reservationsFile, mettreAJourResteACharge } = require("./data");
 const { parseCsv, encoderLigneCsv } = require("./csv");
 
 const router = express.Router();
@@ -16,11 +16,9 @@ const reservationHeaders = [
   "email",
   "telephone",
   "nombrePersonnes",
-  "nombreBoissons",
   "tarifsPersonnes",
   "totalBuffets",
-  "ticketsInclus",
-  "boissonsSupplementaires",
+  "resteACharge",
 ];
 const loginView = path.join(__dirname, "../views/adminLogin.ejs");
 const dashboardView = path.join(__dirname, "../views/dashboard.ejs");
@@ -137,6 +135,29 @@ router.post("/logout", exigerAuthentification, (req, res, next) => {
     res.clearCookie("connect.sid");
     return res.redirect("/dashboard/login");
   });
+});
+
+router.post("/balance", exigerAuthentification, async (req, res, next) => {
+  const form = req.body && typeof req.body === "object" ? req.body : {};
+  const email = typeof form.email === "string" ? form.email.trim() : "";
+  const resteACharge = typeof form.resteACharge === "string" ? form.resteACharge.trim() : "";
+  if (!email || !/^\d+(?:[.,]\d{1,2})?$/.test(resteACharge)) {
+    return res.status(400).send("La réservation ou le reste à charge est invalide.");
+  }
+
+  try {
+    const amount = Number(resteACharge.replace(",", "."));
+    if (!Number.isFinite(amount) || amount < 0) {
+      return res.status(400).send("Le reste à charge doit être un montant positif ou nul.");
+    }
+    const updated = await mettreAJourResteACharge(email, String(amount));
+    if (!updated) {
+      return res.status(404).send("Réservation introuvable.");
+    }
+    return res.redirect("/dashboard");
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.get("/", exigerAuthentification, async (req, res, next) => {
