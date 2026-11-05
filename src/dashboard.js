@@ -7,6 +7,9 @@ const {
   reservationsFile,
   mettreAJourResteACharge,
   mettreAJourReservation,
+  supprimerReservation,
+  maxReservationPeople,
+  maxReservations,
 } = require("./data");
 const { parseCsv, encoderLigneCsv } = require("./csv");
 
@@ -25,9 +28,11 @@ const reservationHeaders = [
   "tarifsPersonnes",
   "totalBuffets",
   "resteACharge",
+  "statut",
 ];
 const loginView = path.join(__dirname, "../views/adminLogin.ejs");
 const dashboardView = path.join(__dirname, "../views/dashboard.ejs");
+const proofView = path.join(__dirname, "../views/proof.ejs");
 
 router.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
@@ -77,14 +82,26 @@ function protegerFormulesCsv(value) {
 
 function creerCsvReservations(reservations) {
   const rows = [encoderLigneCsv(reservationHeaders)];
-  for (const reservation of reservations) {
+  for (const [index, reservation] of reservations.entries()) {
+    const status = obtenirStatutReservation(reservation, index);
     rows.push(
       encoderLigneCsv(
-        reservationHeaders.map((header) => protegerFormulesCsv(reservation[header])),
+        reservationHeaders.map((header) =>
+          protegerFormulesCsv(header === "statut" ? status : reservation[header]),
+        ),
       ),
     );
   }
   return `${rows.join("\r\n")}\r\n`;
+}
+
+function obtenirStatutReservation(reservation, index) {
+  if (index >= maxReservations) {
+    return "en attente";
+  }
+  return reservation.resteACharge !== "" && Number(reservation.resteACharge) === 0
+    ? "payé"
+    : "réservé";
 }
 
 function lireTarifsAdmin(tarifsPersonnes, nombrePersonnes) {
@@ -104,9 +121,9 @@ function lireTarifsAdmin(tarifsPersonnes, nombrePersonnes) {
 
   const parsedCount = Number(nombrePersonnes);
   const count =
-    Number.isInteger(parsedCount) && parsedCount >= 1 && parsedCount <= 12
+    Number.isInteger(parsedCount) && parsedCount >= 1 && parsedCount <= maxReservationPeople
       ? parsedCount
-      : Math.min(Math.max(tarifs.length, 1), 12);
+      : Math.min(Math.max(tarifs.length, 1), maxReservationPeople);
   const tarifsAdmin = Array.from({ length: count }, (_, index) => {
     const tarif = tarifs[index];
     if (tarif === "externe" || tarif === "exterieur") {
@@ -117,6 +134,19 @@ function lireTarifsAdmin(tarifsPersonnes, nombrePersonnes) {
   const prix = { exterieur: 25, reduit: 18, offert: 0 };
   const totalBuffets = tarifsAdmin.reduce((total, tarif) => total + prix[tarif], 0);
   return { nombrePersonnesAdmin: count, tarifsAdmin, totalBuffets };
+}
+
+function lireTarifsPreuve(tarifsPersonnes) {
+  try {
+    const tarifs = JSON.parse(tarifsPersonnes);
+    return Array.isArray(tarifs)
+      ? tarifs.map((tarif) =>
+          tarif === "interne" || tarif === "reduit" ? "reduit" : tarif === "offert" ? "offert" : "exterieur",
+        )
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 router.get("/login", (req, res) => {
@@ -212,7 +242,7 @@ router.post("/reservation", exigerAuthentification, async (req, res, next) => {
     resteACharge: typeof form.resteACharge === "string" ? form.resteACharge.trim() : "",
   };
   const nombrePersonnes = Number(reservation.nombrePersonnes);
-  const tarifs = Number.isInteger(nombrePersonnes) && nombrePersonnes >= 1 && nombrePersonnes <= 12
+  const tarifs = Number.isInteger(nombrePersonnes) && nombrePersonnes >= 1 && nombrePersonnes <= maxReservationPeople
     ? Array.from({ length: nombrePersonnes }, (_, index) => form[`tarifPersonne${index}`])
     : [];
   const montantValide = (value) => value === "" || /^\d+(?:[.,]\d{1,2})?$/.test(value);
@@ -234,6 +264,8 @@ router.post("/reservation", exigerAuthentification, async (req, res, next) => {
     return res.status(400).send("Vérifiez les coordonnées et les allergies de la réservation.");
   }
   if (
+    nombrePersonnes >= 1 &&
+    nombrePersonnes <= maxReservationPeople &&
     tarifs.length === nombrePersonnes &&
     tarifs.every((tarif) => ["exterieur", "reduit", "offert"].includes(tarif))
   ) {
@@ -269,21 +301,80 @@ router.post("/reservation", exigerAuthentification, async (req, res, next) => {
     }
   }
   return res.status(400).send(
-    "Le nombre de participants doit être compris entre 1 et 12, avec un tarif valide par personne.",
+    `Le nombre de participants doit être compris entre 1 et ${maxReservationPeople}, avec un tarif valide par personne.`,
   );
+});
+
+router.post("/reservation/delete", exigerAuthentification, async (req, res, next) => {
+  const form = req.body && typeof req.body === "object" ? req.body : {};
+  const email = typeof form.email === "string" ? form.email.trim() : "";
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).send("La réservation à supprimer est invalide.");
+  }
+
+  try {
+    const deleted = await supprimerReservation(email);
+    if (!deleted) {
+      return res.status(404).send("Réservation introuvable.");
+    }
+    return res.redirect("/dashboard?deleted=1");
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get("/proof", exigerAuthentification, async (req, res, next) => {
+  const email = typeof req.query.email === "string" ? req.query.email.trim() : "";
+  if (!email) {
+    return res.status(400).send("Adresse e-mail de réservation manquante.");
+  }
+
+  try {
+    const reservations = await lireReservations();
+    const index = reservations.findIndex(
+      (reservation) => reservation.email.trim().toLowerCase() === email.toLowerCase(),
+    );
+    if (index === -1) {
+      return res.status(404).send("Réservation introuvable.");
+    }
+    const reservation = reservations[index];
+    return res.render(
+      proofView,
+      {
+        reservation,
+        tarifs: lireTarifsPreuve(reservation.tarifsPersonnes),
+        status: obtenirStatutReservation(reservation, index),
+      },
+      (error, html) => {
+        if (error) {
+          return next(error);
+        }
+        res.type("html");
+        res.attachment("preuve-achat-cinq-sens.html");
+        return res.send(html);
+      },
+    );
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.get("/", exigerAuthentification, async (req, res, next) => {
   try {
     const reservations = await lireReservations();
     return res.render(dashboardView, {
-      reservations: reservations.map((reservation) => ({
+      reservations: reservations.map((reservation, index) => ({
         ...reservation,
         ...lireTarifsAdmin(reservation.tarifsPersonnes, reservation.nombrePersonnes),
+        status: obtenirStatutReservation(reservation, index),
       })),
       adminUsername: req.session.adminUsername,
       successMessage:
-        req.query.saved === "1" ? "La réservation a bien été mise à jour." : null,
+        req.query.saved === "1"
+          ? "La réservation a bien été mise à jour."
+          : req.query.deleted === "1"
+            ? "La réservation a été supprimée."
+            : null,
     });
   } catch (error) {
     return next(error);

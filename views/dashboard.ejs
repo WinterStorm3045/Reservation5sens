@@ -36,11 +36,12 @@
               <th scope="col">Prénom</th>
               <th scope="col">Adresse e-mail</th>
               <th scope="col">Téléphone</th>
-              <th scope="col">Allergies</th>
+              <th scope="col">Restrictions et allergies</th>
               <th scope="col">Personnes</th>
               <th scope="col">Tarifs choisis</th>
               <th scope="col">Buffets à prépayer</th>
               <th scope="col">Reste à charge</th>
+              <th scope="col">Statut</th>
               <th scope="col">Action</th>
             </tr>
           </thead>
@@ -57,7 +58,7 @@
                 <td><input class="dashboard-input" form="<%= formId %>" name="prenom" value="<%= reservation.prenom %>" aria-label="Prénom" required></td>
                 <td><input class="dashboard-input" form="<%= formId %>" name="email" type="email" value="<%= reservation.email %>" aria-label="Adresse e-mail" required></td>
                 <td><input class="dashboard-input" form="<%= formId %>" name="telephone" type="tel" value="<%= reservation.telephone %>" aria-label="Téléphone" required></td>
-                <td><textarea class="dashboard-input dashboard-textarea" form="<%= formId %>" name="allergies" rows="2" maxlength="500" aria-label="Allergies"><%= reservation.allergies %></textarea></td>
+                <td><textarea class="dashboard-input dashboard-textarea" form="<%= formId %>" name="allergies" rows="2" maxlength="500" aria-label="Restrictions et autres allergies alimentaires"><%= reservation.allergies %></textarea></td>
                 <td>
                   <input
                     class="dashboard-input dashboard-number dashboard-person-count"
@@ -65,7 +66,7 @@
                     name="nombrePersonnes"
                     type="number"
                     min="1"
-                    max="12"
+                    max="5"
                     value="<%= reservation.nombrePersonnesAdmin %>"
                     aria-label="Nombre de personnes"
                     required
@@ -110,7 +111,15 @@
                     <% } %>
                   </div>
                 </td>
-                <td><button class="dashboard-save" form="<%= formId %>" type="submit">Enregistrer</button></td>
+                <td><span class="reservation-status-badge reservation-status-<%= reservation.status === "payé" ? "paid" : reservation.status === "en attente" ? "waiting" : "reserved" %>"><%= reservation.status %></span></td>
+                <td class="dashboard-actions">
+                  <button class="dashboard-save" form="<%= formId %>" type="submit">Enregistrer</button>
+                  <a class="dashboard-proof-link" href="/dashboard/proof?email=<%= encodeURIComponent(reservation.email) %>">Preuve d’achat</a>
+                  <form action="/dashboard/reservation/delete" method="post" onsubmit="return confirm('Supprimer définitivement cette réservation ?');">
+                    <input type="hidden" name="email" value="<%= reservation.email %>">
+                    <button class="dashboard-delete" type="submit">Supprimer</button>
+                  </form>
+                </td>
               </tr>
             <% }) %>
           </tbody>
@@ -133,7 +142,7 @@
         const totalInput = row.querySelector(".dashboard-buffet-total");
         const formId = countInput.getAttribute("form");
         const count = Number(countInput.value);
-        if (!Number.isInteger(count) || count < 1 || count > 12) return;
+        if (!Number.isInteger(count) || count < 1 || count > 5) return;
 
         const existing = Array.from(tariffs.querySelectorAll(".dashboard-tariff-select"));
         const selected = existing.map((select) => select.value);

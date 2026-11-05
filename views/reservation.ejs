@@ -14,19 +14,27 @@
     <section class="page-intro" aria-labelledby="page-title">
       <p class="eyebrow">Cinq sens</p>
       <h1 id="page-title">Réservation</h1>
-      <p class="hero-description">Renseignez vos coordonnées, ajoutez chaque participant et choisissez son tarif : membre d’ICARE ou extérieur.</p>
+      <p class="hero-description">Renseignez vos coordonnées, ajoutez chaque participant (5 maximum) et choisissez son tarif : membre d’ICARE ou extérieur.</p>
     </section>
 
-    <% if (successMessage) { %>
-      <p class="form-message form-success" role="status"><%= successMessage %></p>
-    <% } %>
-    <% if (alreadyReserved) { %>
-      <section class="reservation-status" aria-label="Réservation déjà enregistrée">
+    <% if (typeof reservationStatus !== "undefined" && reservationStatus) { %>
+      <section class="reservation-status reservation-status-<%= reservationStatus %>" role="status" aria-live="polite">
         <div>
-          <strong>Une réservation est déjà enregistrée depuis ce navigateur.</strong>
-          <p>Retrouvez votre preuve de réservation ci-dessous.</p>
+          <% if (reservationStatus === "waiting") { %>
+            <strong>Votre demande a bien été enregistrée, mais votre place n’est pas garantie.</strong>
+            <p>Nous vous recontacterons si des places se libèrent. Aucun paiement n’est demandé pour le moment.</p>
+          <% } else { %>
+            <strong>Votre réservation a bien été enregistrée. Votre place est confirmée.</strong>
+            <p>Montant à payer pour les buffets : <strong><%= reservationAmount %> €</strong>.</p>
+          <% } %>
         </div>
-        <a class="secondary-link" href="/data/reservations/proof" download>Télécharger ma preuve</a>
+        <% if (reservationStatus === "reserved") { %>
+          <% if (paymentUrl) { %>
+            <a class="primary-link payment-link" href="<%= paymentUrl %>" target="_blank" rel="noopener noreferrer">Payer <%= reservationAmount %> €</a>
+          <% } else { %>
+            <button class="primary-link payment-link" type="button" disabled title="Le lien sera disponible dès qu’il aura été configuré.">Lien de paiement à configurer · <%= reservationAmount %> €</button>
+          <% } %>
+        <% } %>
       </section>
     <% } %>
     <form class="reservation-form" action="/data/reservations" method="post">
@@ -50,9 +58,9 @@
         <input id="telephone" name="telephone" type="tel" autocomplete="tel" required>
       </div>
       <div class="form-field form-field-wide">
-        <label for="allergies">Allergies alimentaires (facultatif)</label>
+        <label for="allergies">Restrictions et autres allergies alimentaires (facultatif)</label>
         <textarea id="allergies" name="allergies" rows="3" maxlength="500"><%= allergies || "" %></textarea>
-        <p class="field-hint">Indiquez les allergies à prendre en compte pour votre réservation.</p>
+        <p class="field-hint">Indiquez toute restriction alimentaire ou allergie à prendre en compte.</p>
       </div>
       <input id="nombrePersonnes" name="nombrePersonnes" type="hidden" value="1">
       <input id="tarifsPersonnes" name="tarifsPersonnes" type="hidden" value='["interne"]'>
@@ -60,7 +68,7 @@
         <div class="choice-heading">
           <div>
             <span class="field-label" id="people-label">Participants</span>
-            <p class="field-hint">Ajoutez ou retirez des personnes, puis choisissez un tarif pour chacune (maximum 12).</p>
+            <p class="field-hint">Ajoutez ou retirez des personnes, puis choisissez un tarif pour chacune (maximum 5).</p>
           </div>
           <div class="stepper" role="group" aria-labelledby="people-label">
             <button type="button" id="people-minus" aria-label="Retirer une personne">−</button>
@@ -80,7 +88,7 @@
   <script>
     (() => {
       const prices = { interne: 18, externe: 25 };
-      const maxPeople = 12;
+      const maxPeople = 5;
       let people = ["interne"];
       const peopleList = document.getElementById("people-list");
 

@@ -4,8 +4,12 @@ const {
   router: dataRouter,
   trouverReservationParPreuve,
   reservationProofCookie,
+  lireReservations,
+  maxReservations,
 } = require("./src/data");
 const dashboardRouter = require("./src/dashboard");
+
+const PAYMENT_URL = ""; // Collez ici le lien de paiement lorsqu'il sera disponible.
 
 app.use("/data", dataRouter);
 app.use("/dashboard", dashboardRouter);
@@ -25,9 +29,23 @@ app.get("/informations", (req, res) => {
 app.get("/reservation", async (req, res, next) => {
   try {
     const reservation = await trouverReservationParPreuve(req.cookies?.[reservationProofCookie]);
+    let reservationStatus = "";
+    if (reservation) {
+      const reservations = await lireReservations();
+      const reservationIndex = reservations.findIndex(
+        (entry) => entry.email.trim().toLowerCase() === reservation.email.trim().toLowerCase(),
+      );
+      if (reservationIndex !== -1) {
+        reservationStatus = reservationIndex < maxReservations ? "reserved" : "waiting";
+      }
+    }
     return res.render(path.join(__dirname, "views", "reservation.ejs"), {
-      successMessage:
-        req.query.success === "1" ? "Votre réservation a bien été enregistrée." : null,
+      reservationStatus,
+      reservationAmount:
+        reservation && Number.isFinite(Number(reservation.totalBuffets))
+          ? Number(reservation.totalBuffets)
+          : null,
+      paymentUrl: PAYMENT_URL,
       errorMessage: null,
       allergies: "",
       alreadyReserved: Boolean(reservation),

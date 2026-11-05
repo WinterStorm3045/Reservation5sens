@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Preuve de réservation — Cinq sens</title>
+  <title>Preuve d’achat — Cinq sens</title>
   <style>
     :root {
       color-scheme: light;
@@ -80,8 +80,8 @@
 <body>
   <main>
     <p class="eyebrow">Cinq sens · Apéro dînatoire</p>
-    <h1>Preuve de réservation</h1>
-    <p class="intro">Cette page confirme l’enregistrement de votre réservation.</p>
+    <h1>Preuve d’achat</h1>
+    <p class="intro">Statut de la réservation : <strong><%= status %></strong>.</p>
     <dl>
       <dt>Nom</dt>
       <dd><%= reservation.nom %></dd>
@@ -91,8 +91,8 @@
       <dd><%= reservation.nombrePersonnes %></dd>
       <dt>Tarifs sélectionnés</dt>
       <dd><%= tarifs.map((tarif) => tarif === "interne" || tarif === "reduit" ? "Tarif réduit" : tarif === "offert" ? "Offert" : "Tarif extérieur").join(", ") %></dd>
-      <dt>Allergies indiquées</dt>
-      <dd><%= reservation.allergies || "Aucune allergie indiquée" %></dd>
+      <dt>Restrictions et autres allergies alimentaires</dt>
+      <dd><%= reservation.allergies || "Aucune restriction ni allergie indiquée" %></dd>
     </dl>
     <p class="total"><strong>Total buffets à prépayer</strong><span><%= reservation.totalBuffets %> €</span></p>
     <footer>Conservez ce document comme preuve de votre réservation.</footer>

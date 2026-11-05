@@ -454,6 +454,17 @@ h1::after {
   text-align: center;
 }
 
+.form-waiting {
+  max-width: 720px;
+  margin: 0 auto 18px;
+  padding: 14px 18px;
+  border: 1px solid rgba(129, 86, 19, .22);
+  border-radius: 12px;
+  background: rgba(166, 112, 31, .1);
+  color: #704b12;
+  text-align: center;
+}
+
 .reservation-status {
   display: flex;
   max-width: 720px;
@@ -476,6 +487,29 @@ h1::after {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 13px;
+}
+
+.reservation-status-reserved {
+  border-color: rgba(38, 112, 67, .22);
+  border-left-color: #34734a;
+  background: rgba(52, 115, 74, .1);
+}
+
+.reservation-status-waiting {
+  border-color: rgba(129, 86, 19, .22);
+  border-left-color: #98702f;
+  background: rgba(166, 112, 31, .1);
+}
+
+.reservation-status-reserved p,
+.reservation-status-reserved strong {
+  color: #285d3b;
+}
+
+.payment-link:disabled {
+  cursor: not-allowed;
+  opacity: .7;
+  transform: none;
 }
 
 .secondary-link {
@@ -995,6 +1029,77 @@ h1::after {
   transform: translateY(-1px);
   background: var(--cream-accent);
   box-shadow: 0 5px 12px rgba(38, 57, 47, .14);
+}
+
+.reservation-status-badge {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.reservation-status-paid {
+  background: rgba(38, 112, 67, .12);
+  color: #23643d;
+}
+
+.reservation-status-reserved {
+  background: rgba(117, 102, 76, .13);
+  color: #66583f;
+}
+
+.reservation-status-waiting {
+  background: rgba(166, 112, 31, .14);
+  color: #815613;
+}
+
+.dashboard-actions {
+  display: grid;
+  min-width: 150px;
+  gap: 8px;
+}
+
+.dashboard-proof-link,
+.dashboard-delete {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid rgba(38, 57, 47, .2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dashboard-proof-link:hover {
+  background: var(--green);
+  color: var(--paper);
+}
+
+.dashboard-delete {
+  border-color: rgba(163, 63, 42, .28);
+  color: #a33f2a;
+}
+
+.dashboard-delete:hover {
+  background: #a33f2a;
+  color: #fffdf8;
+}
+
+.dashboard-proof-link:focus-visible,
+.dashboard-delete:focus-visible {
+  outline: 3px solid var(--cream-accent);
+  outline-offset: 3px;
 }
 
 @media (max-width: 600px) {

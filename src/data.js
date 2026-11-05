@@ -23,6 +23,8 @@ const headers = [
 ];
 const reservationProofCookie = "reservationProof";
 const reservationProofMaxAge = 365 * 24 * 60 * 60 * 1000;
+const maxReservationPeople = 5;
+const maxReservations = 90;
 let reservationQueue = Promise.resolve();
 
 async function lireReservations() {
@@ -59,14 +61,6 @@ async function lireReservations() {
     }
     return reservation;
   });
-}
-
-async function verifierReservation(email) {
-  const reservations = await lireReservations();
-  const normalizedEmail = email.trim().toLowerCase();
-  return reservations.some(
-    (reservation) => reservation.email.trim().toLowerCase() === normalizedEmail,
-  );
 }
 
 async function ajouterReservation(reservation) {
@@ -128,6 +122,27 @@ function mettreAJourReservation(emailActuel, modifications) {
     Object.assign(reservation, modifications);
     await sauvegarderReservations(reservations);
     return "updated";
+  });
+  reservationQueue = operation.then(
+    () => undefined,
+    () => undefined,
+  );
+  return operation;
+}
+
+function supprimerReservation(email) {
+  const operation = reservationQueue.then(async () => {
+    const reservations = await lireReservations();
+    const index = reservations.findIndex(
+      (entry) => entry.email.trim().toLowerCase() === email.trim().toLowerCase(),
+    );
+    if (index === -1) {
+      return false;
+    }
+
+    reservations.splice(index, 1);
+    await sauvegarderReservations(reservations);
+    return true;
   });
   reservationQueue = operation.then(
     () => undefined,
@@ -204,9 +219,9 @@ function validerReservation(reservation) {
     !/^\d+$/.test(reservation.nombrePersonnes) ||
     !Number.isSafeInteger(Number(reservation.nombrePersonnes)) ||
     Number(reservation.nombrePersonnes) < 1 ||
-    Number(reservation.nombrePersonnes) > 12
+    Number(reservation.nombrePersonnes) > maxReservationPeople
   ) {
-    return "Le nombre de personnes doit être un entier compris entre 1 et 12.";
+    return `Le nombre de personnes doit être compris entre 1 et ${maxReservationPeople}.`;
   }
   let tarifsPersonnes;
   try {
@@ -265,11 +280,18 @@ async function recevoirRequeteReservation(req, res, next) {
   const proofToken = crypto.randomBytes(32).toString("hex");
   reservation.reservationProofHash = crypto.createHash("sha256").update(proofToken).digest("hex");
   const operation = reservationQueue.then(async () => {
-    if (await verifierReservation(reservation.email)) {
-      return false;
+    const reservations = await lireReservations();
+    const normalizedEmail = reservation.email.trim().toLowerCase();
+    if (
+      reservations.some(
+        (entry) => entry.email.trim().toLowerCase() === normalizedEmail,
+      )
+    ) {
+      return "duplicate";
     }
+    const status = reservations.length < maxReservations ? "reserved" : "waiting";
     await ajouterReservation(reservation);
-    return true;
+    return status;
   });
   reservationQueue = operation.then(
     () => undefined,
@@ -277,8 +299,8 @@ async function recevoirRequeteReservation(req, res, next) {
   );
 
   try {
-    const added = await operation;
-    if (!added) {
+    const status = await operation;
+    if (status === "duplicate") {
       return res.status(409).render(path.join(__dirname, "../views/reservation.ejs"), {
         errorMessage: "Une réservation existe déjà avec cette adresse e-mail.",
         successMessage: null,
@@ -293,7 +315,7 @@ async function recevoirRequeteReservation(req, res, next) {
       sameSite: "lax",
       secure: req.secure,
     });
-    return res.redirect("/reservation?success=1");
+    return res.redirect(`/reservation?status=${status}`);
   } catch (error) {
     return next(error);
   }
@@ -301,35 +323,15 @@ async function recevoirRequeteReservation(req, res, next) {
 
 router.post("/reservations", recevoirRequeteReservation);
 
-router.get("/reservations/proof", async (req, res, next) => {
-  try {
-    const reservation = await trouverReservationParPreuve(req.cookies?.[reservationProofCookie]);
-    if (!reservation) {
-      return res.status(404).send("Aucune preuve de réservation n'est disponible dans ce navigateur.");
-    }
-    return res.render(
-      path.join(__dirname, "../views/proof.ejs"),
-      { reservation, tarifs: JSON.parse(reservation.tarifsPersonnes) },
-      (error, html) => {
-        if (error) {
-          return next(error);
-        }
-        res.type("html");
-        res.attachment("preuve-reservation-cinq-sens.html");
-        return res.send(html);
-      },
-    );
-  } catch (error) {
-    return next(error);
-  }
-});
-
 module.exports = {
   router,
   lireReservations,
   reservationsFile,
   mettreAJourResteACharge,
   mettreAJourReservation,
+  supprimerReservation,
   trouverReservationParPreuve,
   reservationProofCookie,
+  maxReservationPeople,
+  maxReservations,
 };
