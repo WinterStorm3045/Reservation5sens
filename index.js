@@ -1,6 +1,10 @@
 const { app } = require("./src/utils");
 const path = require("path");
-const { router: dataRouter } = require("./src/data");
+const {
+  router: dataRouter,
+  trouverReservationParPreuve,
+  reservationProofCookie,
+} = require("./src/data");
 const dashboardRouter = require("./src/dashboard");
 
 app.use("/data", dataRouter);
@@ -18,12 +22,19 @@ app.get("/informations", (req, res) => {
   res.render(path.join(__dirname, "views", "informations.ejs"));
 });
 
-app.get("/reservation", (req, res) => {
-  res.render(path.join(__dirname, "views", "reservation.ejs"), {
-    successMessage:
-      req.query.success === "1" ? "Votre réservation a bien été enregistrée." : null,
-    errorMessage: null,
-  });
+app.get("/reservation", async (req, res, next) => {
+  try {
+    const reservation = await trouverReservationParPreuve(req.cookies?.[reservationProofCookie]);
+    return res.render(path.join(__dirname, "views", "reservation.ejs"), {
+      successMessage:
+        req.query.success === "1" ? "Votre réservation a bien été enregistrée." : null,
+      errorMessage: null,
+      allergies: "",
+      alreadyReserved: Boolean(reservation),
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 

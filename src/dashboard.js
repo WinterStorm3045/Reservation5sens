@@ -2,7 +2,12 @@ const express = require("express");
 const fs = require("fs/promises");
 const path = require("path");
 const bcrypt = require("bcrypt");
-const { lireReservations, reservationsFile, mettreAJourResteACharge } = require("./data");
+const {
+  lireReservations,
+  reservationsFile,
+  mettreAJourResteACharge,
+  mettreAJourReservation,
+} = require("./data");
 const { parseCsv, encoderLigneCsv } = require("./csv");
 
 const router = express.Router();
@@ -15,6 +20,7 @@ const reservationHeaders = [
   "prenom",
   "email",
   "telephone",
+  "allergies",
   "nombrePersonnes",
   "tarifsPersonnes",
   "totalBuffets",
@@ -79,6 +85,38 @@ function creerCsvReservations(reservations) {
     );
   }
   return `${rows.join("\r\n")}\r\n`;
+}
+
+function lireTarifsAdmin(tarifsPersonnes, nombrePersonnes) {
+  let tarifs = [];
+  if (!tarifsPersonnes) {
+    tarifs = [];
+  } else {
+    try {
+      const parsed = JSON.parse(tarifsPersonnes);
+      if (Array.isArray(parsed)) {
+        tarifs = parsed;
+      }
+    } catch {
+      tarifs = [];
+    }
+  }
+
+  const parsedCount = Number(nombrePersonnes);
+  const count =
+    Number.isInteger(parsedCount) && parsedCount >= 1 && parsedCount <= 12
+      ? parsedCount
+      : Math.min(Math.max(tarifs.length, 1), 12);
+  const tarifsAdmin = Array.from({ length: count }, (_, index) => {
+    const tarif = tarifs[index];
+    if (tarif === "externe" || tarif === "exterieur") {
+      return "exterieur";
+    }
+    return tarif === "offert" ? "offert" : "reduit";
+  });
+  const prix = { exterieur: 25, reduit: 18, offert: 0 };
+  const totalBuffets = tarifsAdmin.reduce((total, tarif) => total + prix[tarif], 0);
+  return { nombrePersonnesAdmin: count, tarifsAdmin, totalBuffets };
 }
 
 router.get("/login", (req, res) => {
@@ -160,12 +198,92 @@ router.post("/balance", exigerAuthentification, async (req, res, next) => {
   }
 });
 
+router.post("/reservation", exigerAuthentification, async (req, res, next) => {
+  const form = req.body && typeof req.body === "object" ? req.body : {};
+  const originalEmail = typeof form.originalEmail === "string" ? form.originalEmail.trim() : "";
+  const reservation = {
+    nom: typeof form.nom === "string" ? form.nom.trim() : "",
+    prenom: typeof form.prenom === "string" ? form.prenom.trim() : "",
+    email: typeof form.email === "string" ? form.email.trim() : "",
+    telephone: typeof form.telephone === "string" ? form.telephone.trim() : "",
+    allergies: typeof form.allergies === "string" ? form.allergies.trim() : "",
+    nombrePersonnes:
+      typeof form.nombrePersonnes === "string" ? form.nombrePersonnes.trim() : "",
+    resteACharge: typeof form.resteACharge === "string" ? form.resteACharge.trim() : "",
+  };
+  const nombrePersonnes = Number(reservation.nombrePersonnes);
+  const tarifs = Number.isInteger(nombrePersonnes) && nombrePersonnes >= 1 && nombrePersonnes <= 12
+    ? Array.from({ length: nombrePersonnes }, (_, index) => form[`tarifPersonne${index}`])
+    : [];
+  const montantValide = (value) => value === "" || /^\d+(?:[.,]\d{1,2})?$/.test(value);
+
+  if (!originalEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(originalEmail)) {
+    return res.status(400).send("La réservation à modifier est invalide.");
+  }
+  if (
+    !reservation.nom ||
+    reservation.nom.length > 120 ||
+    !reservation.prenom ||
+    reservation.prenom.length > 120 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reservation.email) ||
+    reservation.email.length > 254 ||
+    !reservation.telephone ||
+    reservation.telephone.length > 40 ||
+    reservation.allergies.length > 500
+  ) {
+    return res.status(400).send("Vérifiez les coordonnées et les allergies de la réservation.");
+  }
+  if (
+    tarifs.length === nombrePersonnes &&
+    tarifs.every((tarif) => ["exterieur", "reduit", "offert"].includes(tarif))
+  ) {
+    if (!montantValide(reservation.resteACharge)) {
+      return res.status(400).send("Le reste à charge doit être positif et comporter au plus deux décimales.");
+    }
+    try {
+      const prix = { exterieur: 25, reduit: 18, offert: 0 };
+      const totalBuffets = String(tarifs.reduce((total, tarif) => total + prix[tarif], 0));
+      const result = await mettreAJourReservation(originalEmail, {
+        nom: reservation.nom,
+        prenom: reservation.prenom,
+        email: reservation.email,
+        telephone: reservation.telephone,
+        allergies: reservation.allergies,
+        nombrePersonnes: String(nombrePersonnes),
+        tarifsPersonnes: JSON.stringify(tarifs),
+        totalBuffets,
+        resteACharge:
+          reservation.resteACharge === ""
+            ? ""
+            : reservation.resteACharge.replace(",", "."),
+      });
+      if (result === "not-found") {
+        return res.status(404).send("Réservation introuvable.");
+      }
+      if (result === "email-conflict") {
+        return res.status(409).send("Cette adresse e-mail est déjà utilisée par une autre réservation.");
+      }
+      return res.redirect("/dashboard?saved=1");
+    } catch (error) {
+      return next(error);
+    }
+  }
+  return res.status(400).send(
+    "Le nombre de participants doit être compris entre 1 et 12, avec un tarif valide par personne.",
+  );
+});
+
 router.get("/", exigerAuthentification, async (req, res, next) => {
   try {
     const reservations = await lireReservations();
     return res.render(dashboardView, {
-      reservations,
+      reservations: reservations.map((reservation) => ({
+        ...reservation,
+        ...lireTarifsAdmin(reservation.tarifsPersonnes, reservation.nombrePersonnes),
+      })),
       adminUsername: req.session.adminUsername,
+      successMessage:
+        req.query.saved === "1" ? "La réservation a bien été mise à jour." : null,
     });
   } catch (error) {
     return next(error);

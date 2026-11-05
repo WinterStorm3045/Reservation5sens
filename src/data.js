@@ -1,5 +1,6 @@
 const express = require("express");
 const fs = require("fs/promises");
+const crypto = require("crypto");
 const path = require("path");
 const { parseCsv, encoderLigneCsv } = require("./csv");
 
@@ -13,11 +14,15 @@ const headers = [
   "prenom",
   "email",
   "telephone",
+  "allergies",
   "nombrePersonnes",
   "tarifsPersonnes",
   "totalBuffets",
   "resteACharge",
+  "reservationProofHash",
 ];
+const reservationProofCookie = "reservationProof";
+const reservationProofMaxAge = 365 * 24 * 60 * 60 * 1000;
 let reservationQueue = Promise.resolve();
 
 async function lireReservations() {
@@ -101,6 +106,36 @@ async function sauvegarderReservations(reservations) {
   }
 }
 
+function mettreAJourReservation(emailActuel, modifications) {
+  const operation = reservationQueue.then(async () => {
+    const reservations = await lireReservations();
+    const reservation = reservations.find(
+      (entry) => entry.email.trim().toLowerCase() === emailActuel.trim().toLowerCase(),
+    );
+    if (!reservation) {
+      return "not-found";
+    }
+
+    const autreReservation = reservations.some(
+      (entry) =>
+        entry !== reservation &&
+        entry.email.trim().toLowerCase() === modifications.email.trim().toLowerCase(),
+    );
+    if (autreReservation) {
+      return "email-conflict";
+    }
+
+    Object.assign(reservation, modifications);
+    await sauvegarderReservations(reservations);
+    return "updated";
+  });
+  reservationQueue = operation.then(
+    () => undefined,
+    () => undefined,
+  );
+  return operation;
+}
+
 function mettreAJourResteACharge(email, resteACharge) {
   const operation = reservationQueue.then(async () => {
     const reservations = await lireReservations();
@@ -120,6 +155,21 @@ function mettreAJourResteACharge(email, resteACharge) {
     () => undefined,
   );
   return operation;
+}
+
+async function trouverReservationParPreuve(token) {
+  if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) {
+    return null;
+  }
+  const tokenHash = crypto.createHash("sha256").update(token).digest();
+  const reservations = await lireReservations();
+  return reservations.find((reservation) => {
+    if (!/^[a-f0-9]{64}$/.test(reservation.reservationProofHash || "")) {
+      return false;
+    }
+    const storedHash = Buffer.from(reservation.reservationProofHash, "hex");
+    return crypto.timingSafeEqual(tokenHash, storedHash);
+  }) || null;
 }
 
 function lireChamp(form, name) {
@@ -146,6 +196,9 @@ function validerReservation(reservation) {
   }
   if (reservation.telephone.length > 40) {
     return "Le numéro de téléphone ne peut pas dépasser 40 caractères.";
+  }
+  if (reservation.allergies.length > 500) {
+    return "Les allergies ne peuvent pas dépasser 500 caractères.";
   }
   if (
     !/^\d+$/.test(reservation.nombrePersonnes) ||
@@ -174,11 +227,20 @@ function validerReservation(reservation) {
 
 async function recevoirRequeteReservation(req, res, next) {
   const form = req.body && typeof req.body === "object" ? req.body : {};
+  let alreadyReserved;
+  try {
+    alreadyReserved = Boolean(
+      await trouverReservationParPreuve(req.cookies?.[reservationProofCookie]),
+    );
+  } catch (error) {
+    return next(error);
+  }
   const reservation = {
     nom: lireChamp(form, "nom"),
     prenom: lireChamp(form, "prenom"),
     email: lireChamp(form, "email"),
     telephone: lireChamp(form, "telephone"),
+    allergies: lireChamp(form, "allergies"),
     nombrePersonnes: lireChamp(form, "nombrePersonnes"),
     tarifsPersonnes: lireChamp(form, "tarifsPersonnes"),
   };
@@ -187,6 +249,8 @@ async function recevoirRequeteReservation(req, res, next) {
     return res.status(400).render(path.join(__dirname, "../views/reservation.ejs"), {
       errorMessage: validationError,
       successMessage: null,
+      allergies: reservation.allergies,
+      alreadyReserved,
     });
   }
 
@@ -198,6 +262,8 @@ async function recevoirRequeteReservation(req, res, next) {
     ),
   );
   reservation.resteACharge = reservation.totalBuffets;
+  const proofToken = crypto.randomBytes(32).toString("hex");
+  reservation.reservationProofHash = crypto.createHash("sha256").update(proofToken).digest("hex");
   const operation = reservationQueue.then(async () => {
     if (await verifierReservation(reservation.email)) {
       return false;
@@ -216,8 +282,17 @@ async function recevoirRequeteReservation(req, res, next) {
       return res.status(409).render(path.join(__dirname, "../views/reservation.ejs"), {
         errorMessage: "Une réservation existe déjà avec cette adresse e-mail.",
         successMessage: null,
+        allergies: reservation.allergies,
+        alreadyReserved,
       });
     }
+    res.cookie(reservationProofCookie, proofToken, {
+      httpOnly: true,
+      maxAge: reservationProofMaxAge,
+      path: "/",
+      sameSite: "lax",
+      secure: req.secure,
+    });
     return res.redirect("/reservation?success=1");
   } catch (error) {
     return next(error);
@@ -226,4 +301,35 @@ async function recevoirRequeteReservation(req, res, next) {
 
 router.post("/reservations", recevoirRequeteReservation);
 
-module.exports = { router, lireReservations, reservationsFile, mettreAJourResteACharge };
+router.get("/reservations/proof", async (req, res, next) => {
+  try {
+    const reservation = await trouverReservationParPreuve(req.cookies?.[reservationProofCookie]);
+    if (!reservation) {
+      return res.status(404).send("Aucune preuve de réservation n'est disponible dans ce navigateur.");
+    }
+    return res.render(
+      path.join(__dirname, "../views/proof.ejs"),
+      { reservation, tarifs: JSON.parse(reservation.tarifsPersonnes) },
+      (error, html) => {
+        if (error) {
+          return next(error);
+        }
+        res.type("html");
+        res.attachment("preuve-reservation-cinq-sens.html");
+        return res.send(html);
+      },
+    );
+  } catch (error) {
+    return next(error);
+  }
+});
+
+module.exports = {
+  router,
+  lireReservations,
+  reservationsFile,
+  mettreAJourResteACharge,
+  mettreAJourReservation,
+  trouverReservationParPreuve,
+  reservationProofCookie,
+};

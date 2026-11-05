@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f1e8">
-  <title>Réservation — 5 Sens</title>
+  <title>Réservation — Cinq sens</title>
   <link rel="stylesheet" href="/css/homePage.css">
 </head>
 <body>
@@ -12,13 +12,22 @@
 
   <main class="page-shell inner-page">
     <section class="page-intro" aria-labelledby="page-title">
-      <p class="eyebrow">Les 5 Sens</p>
+      <p class="eyebrow">Cinq sens</p>
       <h1 id="page-title">Réservation</h1>
-      <p class="hero-description">Choisissez le tarif de chaque personne.</p>
+      <p class="hero-description">Renseignez vos coordonnées, ajoutez chaque participant et choisissez son tarif : membre d’ICARE ou extérieur.</p>
     </section>
 
     <% if (successMessage) { %>
       <p class="form-message form-success" role="status"><%= successMessage %></p>
+    <% } %>
+    <% if (alreadyReserved) { %>
+      <section class="reservation-status" aria-label="Réservation déjà enregistrée">
+        <div>
+          <strong>Une réservation est déjà enregistrée depuis ce navigateur.</strong>
+          <p>Retrouvez votre preuve de réservation ci-dessous.</p>
+        </div>
+        <a class="secondary-link" href="/data/reservations/proof" download>Télécharger ma preuve</a>
+      </section>
     <% } %>
     <form class="reservation-form" action="/data/reservations" method="post">
       <% if (errorMessage) { %>
@@ -40,11 +49,19 @@
         <label for="telephone">Numéro de téléphone</label>
         <input id="telephone" name="telephone" type="tel" autocomplete="tel" required>
       </div>
+      <div class="form-field form-field-wide">
+        <label for="allergies">Allergies alimentaires (facultatif)</label>
+        <textarea id="allergies" name="allergies" rows="3" maxlength="500"><%= allergies || "" %></textarea>
+        <p class="field-hint">Indiquez les allergies à prendre en compte pour votre réservation.</p>
+      </div>
       <input id="nombrePersonnes" name="nombrePersonnes" type="hidden" value="1">
       <input id="tarifsPersonnes" name="tarifsPersonnes" type="hidden" value='["interne"]'>
-      <div class="form-field">
+      <div class="form-field form-field-wide people-field">
         <div class="choice-heading">
-          <span class="field-label" id="people-label">Nombre de personnes</span>
+          <div>
+            <span class="field-label" id="people-label">Participants</span>
+            <p class="field-hint">Ajoutez ou retirez des personnes, puis choisissez un tarif pour chacune (maximum 12).</p>
+          </div>
           <div class="stepper" role="group" aria-labelledby="people-label">
             <button type="button" id="people-minus" aria-label="Retirer une personne">−</button>
             <output id="people-count" aria-live="polite">1</output>
@@ -54,7 +71,7 @@
         <div class="people-list" id="people-list"></div>
       </div>
       <div class="booking-total" aria-live="polite">
-        <div><strong>Total buffets à prépayer</strong><small id="total-detail">1 interne</small></div>
+        <div><strong>Total à prépayer pour les buffets</strong><small id="total-detail">1 membre d’ICARE</small></div>
         <output id="total-amount">18 €</output>
       </div>
       <button class="primary-link" type="submit">Envoyer la réservation</button>
@@ -77,8 +94,8 @@
         document.getElementById("people-count").textContent = String(people.length);
         document.getElementById("total-amount").textContent = `${buffetTotal} €`;
         const detail = [];
-        if (internalCount) detail.push(`${internalCount} interne${internalCount > 1 ? "s" : ""}`);
-        if (externalCount) detail.push(`${externalCount} externe${externalCount > 1 ? "s" : ""}`);
+        if (internalCount) detail.push(`${internalCount} membre${internalCount > 1 ? "s" : ""} d’ICARE`);
+        if (externalCount) detail.push(`${externalCount} personne${externalCount > 1 ? "s" : ""} extérieure${externalCount > 1 ? "s" : ""}`);
         document.getElementById("total-detail").textContent = detail.join(" · ");
         document.getElementById("people-minus").disabled = people.length <= 1;
         document.getElementById("people-plus").disabled = people.length >= maxPeople;
@@ -97,7 +114,7 @@
           choices.setAttribute("role", "radiogroup");
           choices.setAttribute("aria-label", `Tarif personne ${index + 1}`);
 
-          [["interne", "Interne · 18 €"], ["externe", "Externe · 25 €"]].forEach(([value, labelText]) => {
+          [["interne", "Membre d’ICARE · 18 €"], ["externe", "Extérieur · 25 €"]].forEach(([value, labelText]) => {
             const id = `person-${index}-${value}`;
             const input = document.createElement("input");
             input.type = "radio";

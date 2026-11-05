@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f1e8">
-  <title>Dashboard — 5 Sens</title>
+  <title>Dashboard — Cinq sens</title>
   <link rel="stylesheet" href="/css/homePage.css">
 </head>
 <body>
@@ -21,6 +21,10 @@
       </form>
     </section>
 
+    <% if (successMessage) { %>
+      <p class="form-message form-success dashboard-message" role="status"><%= successMessage %></p>
+    <% } %>
+
     <% if (reservations.length === 0) { %>
       <p class="empty-state">Aucune réservation pour le moment.</p>
     <% } else { %>
@@ -32,40 +36,74 @@
               <th scope="col">Prénom</th>
               <th scope="col">Adresse e-mail</th>
               <th scope="col">Téléphone</th>
+              <th scope="col">Allergies</th>
               <th scope="col">Personnes</th>
               <th scope="col">Tarifs choisis</th>
               <th scope="col">Buffets à prépayer</th>
               <th scope="col">Reste à charge</th>
+              <th scope="col">Action</th>
             </tr>
           </thead>
           <tbody>
-            <% reservations.forEach((reservation) => { %>
-              <tr>
-                <td><%= reservation.nom %></td>
-                <td><%= reservation.prenom %></td>
-                <td><a href="mailto:<%= reservation.email %>"><%= reservation.email %></a></td>
-                <td><a href="tel:<%= reservation.telephone %>"><%= reservation.telephone %></a></td>
-                <td><%= reservation.nombrePersonnes || "—" %></td>
-                <td><%= reservation.tarifsPersonnes || "—" %></td>
-                <td><%= reservation.totalBuffets ? `${reservation.totalBuffets} €` : "—" %></td>
+            <% reservations.forEach((reservation, index) => { %>
+              <% const formId = `reservation-edit-${index}`; %>
+              <tr class="dashboard-row">
+                <td>
+                  <form id="<%= formId %>" action="/dashboard/reservation" method="post">
+                    <input type="hidden" name="originalEmail" value="<%= reservation.email %>">
+                  </form>
+                  <input class="dashboard-input" form="<%= formId %>" name="nom" value="<%= reservation.nom %>" aria-label="Nom" required>
+                </td>
+                <td><input class="dashboard-input" form="<%= formId %>" name="prenom" value="<%= reservation.prenom %>" aria-label="Prénom" required></td>
+                <td><input class="dashboard-input" form="<%= formId %>" name="email" type="email" value="<%= reservation.email %>" aria-label="Adresse e-mail" required></td>
+                <td><input class="dashboard-input" form="<%= formId %>" name="telephone" type="tel" value="<%= reservation.telephone %>" aria-label="Téléphone" required></td>
+                <td><textarea class="dashboard-input dashboard-textarea" form="<%= formId %>" name="allergies" rows="2" maxlength="500" aria-label="Allergies"><%= reservation.allergies %></textarea></td>
+                <td>
+                  <input
+                    class="dashboard-input dashboard-number dashboard-person-count"
+                    form="<%= formId %>"
+                    name="nombrePersonnes"
+                    type="number"
+                    min="1"
+                    max="12"
+                    value="<%= reservation.nombrePersonnesAdmin %>"
+                    aria-label="Nombre de personnes"
+                    required
+                  >
+                </td>
+                <td>
+                  <div class="dashboard-tariffs">
+                    <% reservation.tarifsAdmin.forEach((tarif, personIndex) => { %>
+                      <label class="dashboard-tariff">
+                        <span>Personne <%= personIndex + 1 %></span>
+                        <select
+                          class="dashboard-input dashboard-tariff-select"
+                          form="<%= formId %>"
+                          name="tarifPersonne<%= personIndex %>"
+                          aria-label="Tarif de la personne <%= personIndex + 1 %>"
+                        >
+                          <option value="exterieur" <%= tarif === "exterieur" ? "selected" : "" %>>Tarif extérieur · 25 €</option>
+                          <option value="reduit" <%= tarif === "reduit" ? "selected" : "" %>>Tarif réduit · 18 €</option>
+                          <option value="offert" <%= tarif === "offert" ? "selected" : "" %>>Offert · 0 €</option>
+                        </select>
+                      </label>
+                    <% }) %>
+                  </div>
+                  <small class="dashboard-hint">Le tarif offert est réservé à la gestion administrateur.</small>
+                </td>
+                <td>
+                  <label class="dashboard-amount">
+                    <input class="dashboard-input dashboard-number dashboard-buffet-total" form="<%= formId %>" name="totalBuffets" type="number" value="<%= reservation.totalBuffets %>" aria-label="Buffets à prépayer" readonly>
+                    <span>€</span>
+                  </label>
+                  <small class="dashboard-hint">Calculé selon le tarif de chaque participant.</small>
+                </td>
                 <td class="balance-cell">
                   <div class="balance-controls">
-                    <form action="/dashboard/balance" method="post">
-                      <input type="hidden" name="email" value="<%= reservation.email %>">
-                      <label class="balance-input-label">
-                        <input
-                          type="number"
-                          name="resteACharge"
-                          min="0"
-                          step="0.01"
-                          value="<%= reservation.resteACharge %>"
-                          aria-label="Reste à charge pour <%= reservation.prenom %> <%= reservation.nom %>"
-                          required
-                        >
-                        <span>€</span>
-                      </label>
-                      <button class="text-button" type="submit">Enregistrer</button>
-                    </form>
+                    <label class="dashboard-amount">
+                      <input class="dashboard-input dashboard-number" form="<%= formId %>" name="resteACharge" type="number" min="0" step="0.01" value="<%= reservation.resteACharge %>" aria-label="Reste à charge">
+                      <span>€</span>
+                    </label>
                     <% if (reservation.resteACharge !== "" && Number(reservation.resteACharge) === 0) { %>
                       <span class="balance-status balance-paid" role="img" aria-label="Reste à charge nul">✓</span>
                     <% } else { %>
@@ -73,6 +111,7 @@
                     <% } %>
                   </div>
                 </td>
+                <td><button class="dashboard-save" form="<%= formId %>" type="submit">Enregistrer</button></td>
               </tr>
             <% }) %>
           </tbody>
@@ -80,5 +119,59 @@
       </div>
     <% } %>
   </main>
+  <script>
+    (() => {
+      const prices = { exterieur: 25, reduit: 18, offert: 0 };
+      const options = [
+        ["exterieur", "Tarif extérieur · 25 €"],
+        ["reduit", "Tarif réduit · 18 €"],
+        ["offert", "Offert · 0 €"],
+      ];
+
+      function updateRow(row) {
+        const countInput = row.querySelector(".dashboard-person-count");
+        const tariffs = row.querySelector(".dashboard-tariffs");
+        const totalInput = row.querySelector(".dashboard-buffet-total");
+        const count = Number(countInput.value);
+        if (!Number.isInteger(count) || count < 1 || count > 12) return;
+
+        const existing = Array.from(tariffs.querySelectorAll(".dashboard-tariff-select"));
+        const selected = existing.map((select) => select.value);
+        tariffs.replaceChildren();
+        for (let index = 0; index < count; index += 1) {
+          const label = document.createElement("label");
+          label.className = "dashboard-tariff";
+          const personLabel = document.createElement("span");
+          personLabel.textContent = `Personne ${index + 1}`;
+          const select = document.createElement("select");
+          select.className = "dashboard-input dashboard-tariff-select";
+          select.name = `tarifPersonne${index}`;
+          select.setAttribute("aria-label", `Tarif de la personne ${index + 1}`);
+          options.forEach(([value, text]) => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = text;
+            option.selected = (selected[index] || "exterieur") === value;
+            select.append(option);
+          });
+          select.addEventListener("change", () => updateRow(row));
+          label.append(personLabel, select);
+          tariffs.append(label);
+        }
+
+        const total = Array.from(tariffs.querySelectorAll(".dashboard-tariff-select"))
+          .reduce((sum, select) => sum + prices[select.value], 0);
+        totalInput.value = String(total);
+      }
+
+      document.querySelectorAll(".dashboard-row").forEach((row) => {
+        row.querySelector(".dashboard-person-count").addEventListener("input", () => updateRow(row));
+        row.querySelectorAll(".dashboard-tariff-select").forEach((select) => {
+          select.addEventListener("change", () => updateRow(row));
+        });
+        updateRow(row);
+      });
+    })();
+  </script>
 </body>
 </html>
