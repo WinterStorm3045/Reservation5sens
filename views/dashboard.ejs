@@ -89,7 +89,6 @@
                       </label>
                     <% }) %>
                   </div>
-                  <small class="dashboard-hint">Le tarif offert est réservé à la gestion administrateur.</small>
                 </td>
                 <td>
                   <label class="dashboard-amount">
@@ -132,6 +131,7 @@
         const countInput = row.querySelector(".dashboard-person-count");
         const tariffs = row.querySelector(".dashboard-tariffs");
         const totalInput = row.querySelector(".dashboard-buffet-total");
+        const formId = countInput.getAttribute("form");
         const count = Number(countInput.value);
         if (!Number.isInteger(count) || count < 1 || count > 12) return;
 
@@ -146,6 +146,7 @@
           const select = document.createElement("select");
           select.className = "dashboard-input dashboard-tariff-select";
           select.name = `tarifPersonne${index}`;
+          select.setAttribute("form", formId);
           select.setAttribute("aria-label", `Tarif de la personne ${index + 1}`);
           options.forEach(([value, text]) => {
             const option = document.createElement("option");
