@@ -14,26 +14,23 @@
     <section class="page-intro" aria-labelledby="page-title">
       <p class="eyebrow">Cinq sens</p>
       <h1 id="page-title">Réservation</h1>
-      <p class="hero-description">Renseignez vos coordonnées, ajoutez chaque participant (5 maximum) et choisissez son tarif : membre d’ICARE ou extérieur.</p>
+      <p class="hero-description">Renseignez vos coordonnées, ajoutez chaque participant (5 maximum) et choisissez son tarif : 18-25 ans ou adulte.</p>
     </section>
 
     <% if (typeof reservationStatus !== "undefined" && reservationStatus) { %>
       <section class="reservation-status reservation-status-<%= reservationStatus %>" role="status" aria-live="polite">
-        <div>
+        <span class="reservation-status-icon" aria-hidden="true"><%= reservationStatus === "waiting" ? "…" : "✓" %></span>
+        <div class="reservation-status-content">
           <% if (reservationStatus === "waiting") { %>
-            <strong>Votre demande a bien été enregistrée, mais votre place n’est pas garantie.</strong>
-            <p>Nous vous recontacterons si des places se libèrent. Aucun paiement n’est demandé pour le moment.</p>
+            <h2 class="reservation-status-title">Demande enregistrée</h2>
+            <p>Votre place n’est pas encore garantie. Nous vous recontacterons si des places se libèrent. Aucun paiement n’est demandé pour le moment.</p>
           <% } else { %>
-            <strong>Votre réservation a bien été enregistrée. Votre place est confirmée.</strong>
-            <p>Montant à payer pour les buffets : <strong><%= reservationAmount %> €</strong>.</p>
+            <h2 class="reservation-status-title">Réservation confirmée</h2>
+            <p>Votre place est confirmée. Montant à payer pour les buffets : <strong class="reservation-amount"><%= reservationAmount %> €</strong>.</p>
           <% } %>
         </div>
         <% if (reservationStatus === "reserved") { %>
-          <% if (paymentUrl) { %>
-            <a class="primary-link payment-link" href="<%= paymentUrl %>" target="_blank" rel="noopener noreferrer">Payer <%= reservationAmount %> €</a>
-          <% } else { %>
-            <button class="primary-link payment-link" type="button" disabled title="Le lien sera disponible dès qu’il aura été configuré.">Lien de paiement à configurer · <%= reservationAmount %> €</button>
-          <% } %>
+          <p class="reservation-payment-note">Nous vous communiquerons le lien de paiement par e-mail.</p>
         <% } %>
       </section>
     <% } %>
@@ -79,7 +76,7 @@
         <div class="people-list" id="people-list"></div>
       </div>
       <div class="booking-total" aria-live="polite">
-        <div><strong>Total à prépayer pour les buffets</strong><small id="total-detail">1 membre d’ICARE</small></div>
+        <div><strong>Total à prépayer pour les buffets</strong><small id="total-detail">1 personne de 18-25 ans</small></div>
         <output id="total-amount">18 €</output>
       </div>
       <button class="primary-link" type="submit">Envoyer la réservation</button>
@@ -102,8 +99,8 @@
         document.getElementById("people-count").textContent = String(people.length);
         document.getElementById("total-amount").textContent = `${buffetTotal} €`;
         const detail = [];
-        if (internalCount) detail.push(`${internalCount} membre${internalCount > 1 ? "s" : ""} d’ICARE`);
-        if (externalCount) detail.push(`${externalCount} personne${externalCount > 1 ? "s" : ""} extérieure${externalCount > 1 ? "s" : ""}`);
+        if (internalCount) detail.push(`${internalCount} personne${internalCount > 1 ? "s" : ""} de 18-25 ans`);
+        if (externalCount) detail.push(`${externalCount} adulte${externalCount > 1 ? "s" : ""}`);
         document.getElementById("total-detail").textContent = detail.join(" · ");
         document.getElementById("people-minus").disabled = people.length <= 1;
         document.getElementById("people-plus").disabled = people.length >= maxPeople;
@@ -122,7 +119,7 @@
           choices.setAttribute("role", "radiogroup");
           choices.setAttribute("aria-label", `Tarif personne ${index + 1}`);
 
-          [["interne", "Membre d’ICARE · 18 €"], ["externe", "Extérieur · 25 €"]].forEach(([value, labelText]) => {
+          [["interne", "18-25 ans · 18 €"], ["externe", "Adulte · 25 €"]].forEach(([value, labelText]) => {
             const id = `person-${index}-${value}`;
             const input = document.createElement("input");
             input.type = "radio";

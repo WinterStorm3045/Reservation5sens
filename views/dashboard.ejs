@@ -28,7 +28,7 @@
     <% if (reservations.length === 0) { %>
       <p class="empty-state">Aucune réservation pour le moment.</p>
     <% } else { %>
-      <div class="table-wrapper">
+      <div class="table-wrapper" role="region" aria-label="Liste des réservations, défilement horizontal possible" tabindex="0">
         <table class="reservation-table">
           <thead>
             <tr>
@@ -83,8 +83,8 @@
                           name="tarifPersonne<%= personIndex %>"
                           aria-label="Tarif de la personne <%= personIndex + 1 %>"
                         >
-                          <option value="exterieur" <%= tarif === "exterieur" ? "selected" : "" %>>Tarif extérieur · 25 €</option>
-                          <option value="reduit" <%= tarif === "reduit" ? "selected" : "" %>>Tarif réduit · 18 €</option>
+                          <option value="exterieur" <%= tarif === "exterieur" ? "selected" : "" %>>Adulte · 25 €</option>
+                          <option value="reduit" <%= tarif === "reduit" ? "selected" : "" %>>18-25 ans · 18 €</option>
                           <option value="offert" <%= tarif === "offert" ? "selected" : "" %>>Offert · 0 €</option>
                         </select>
                       </label>
@@ -131,8 +131,8 @@
     (() => {
       const prices = { exterieur: 25, reduit: 18, offert: 0 };
       const options = [
-        ["exterieur", "Tarif extérieur · 25 €"],
-        ["reduit", "Tarif réduit · 18 €"],
+        ["exterieur", "Adulte · 25 €"],
+        ["reduit", "18-25 ans · 18 €"],
         ["offert", "Offert · 0 €"],
       ];
 

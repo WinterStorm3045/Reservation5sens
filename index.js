@@ -9,8 +9,6 @@ const {
 } = require("./src/data");
 const dashboardRouter = require("./src/dashboard");
 
-const PAYMENT_URL = ""; // Collez ici le lien de paiement lorsqu'il sera disponible.
-
 app.use("/data", dataRouter);
 app.use("/dashboard", dashboardRouter);
 
@@ -45,7 +43,6 @@ app.get("/reservation", async (req, res, next) => {
         reservation && Number.isFinite(Number(reservation.totalBuffets))
           ? Number(reservation.totalBuffets)
           : null,
-      paymentUrl: PAYMENT_URL,
       errorMessage: null,
       allergies: "",
       alreadyReserved: Boolean(reservation),

@@ -70,6 +70,7 @@
       main { padding: 28px 20px; }
       dl { grid-template-columns: 1fr; gap: 4px; }
       dd { margin-bottom: 12px; }
+      .total { align-items: flex-start; flex-direction: column; gap: 4px; }
     }
     @media print {
       body { padding: 0; background: white; }
@@ -90,7 +91,7 @@
       <dt>Nombre de participants</dt>
       <dd><%= reservation.nombrePersonnes %></dd>
       <dt>Tarifs sélectionnés</dt>
-      <dd><%= tarifs.map((tarif) => tarif === "interne" || tarif === "reduit" ? "Tarif réduit" : tarif === "offert" ? "Offert" : "Tarif extérieur").join(", ") %></dd>
+      <dd><%= tarifs.map((tarif) => tarif === "interne" || tarif === "reduit" ? "18-25 ans" : tarif === "offert" ? "Offert" : "Adulte").join(", ") %></dd>
       <dt>Restrictions et autres allergies alimentaires</dt>
       <dd><%= reservation.allergies || "Aucune restriction ni allergie indiquée" %></dd>
     </dl>
