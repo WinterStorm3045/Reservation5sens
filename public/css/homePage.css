@@ -1144,7 +1144,7 @@ h1::after {
   outline-offset: 3px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 600px), (max-aspect-ratio: 3 / 4) {
   .page-shell {
     width: min(100% - 24px, 480px);
   }
