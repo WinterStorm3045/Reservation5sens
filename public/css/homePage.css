@@ -1363,6 +1363,134 @@ h1::after {
   }
 }
 
+html.ratio-mobile .sticky-nav {
+  padding-right: 16px;
+  padding-left: 16px;
+}
+
+html.ratio-mobile .site-header {
+  min-height: 76px;
+}
+
+html.ratio-mobile .main-nav {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+html.ratio-mobile .main-nav a {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+html.ratio-mobile .hero {
+  max-width: none;
+  margin: 40px auto 0;
+  padding: 0 12px;
+}
+
+html.ratio-mobile .intro {
+  margin: 48px 0 36px;
+  padding: 24px 12px;
+}
+
+html.ratio-mobile .sense-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html.ratio-mobile .sense-card:last-child {
+  grid-column: auto;
+}
+
+html.ratio-mobile .page-intro {
+  margin: 40px auto 28px;
+  padding: 0 8px;
+}
+
+html.ratio-mobile .facts-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+html.ratio-mobile .fact,
+html.ratio-mobile .price-card,
+html.ratio-mobile .reservation-form,
+html.ratio-mobile .reservation-status {
+  min-width: 0;
+  padding: 20px;
+}
+
+html.ratio-mobile .price-row {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+html.ratio-mobile .price-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+html.ratio-mobile .price-row span {
+  flex: 0 0 auto;
+}
+
+html.ratio-mobile .person-choice {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+html.ratio-mobile .tariff-choices {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html.ratio-mobile .tariff-choices label {
+  padding: 16px 12px;
+}
+
+html.ratio-mobile .stepper button {
+  width: 64px;
+  height: 64px;
+}
+
+html.ratio-mobile .stepper output {
+  min-width: 60px;
+}
+
+html.ratio-mobile .reservation-status {
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+}
+
+html.ratio-mobile .reservation-status-icon {
+  width: 44px;
+  height: 44px;
+}
+
+html.ratio-mobile .reservation-payment-note {
+  grid-column: 1 / -1;
+}
+
+html.ratio-mobile .dashboard-page {
+  width: 100%;
+}
+
+html.ratio-mobile .dashboard-page .page-intro {
+  margin: 28px auto 24px;
+}
+
+html.ratio-mobile .dashboard-page .table-wrapper {
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.ratio-mobile .contact-section {
+  flex-direction: column;
+  overflow-wrap: anywhere;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
