@@ -11,7 +11,7 @@
     viewport.setAttribute(
       "content",
       isNarrowPortraitRatio
-        ? `width=${screenWidth}, initial-scale=1`
+        ? `width=${screenWidth}, initial-scale=1.15`
         : "width=device-width, initial-scale=1",
     );
   }
