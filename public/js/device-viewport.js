@@ -8,6 +8,7 @@
     const aspectRatio = screenWidth / screenHeight;
     const isNarrowPortraitRatio = aspectRatio <= 1;
 
+    document.documentElement.classList.toggle("ratio-mobile", isNarrowPortraitRatio);
     viewport.setAttribute(
       "content",
       isNarrowPortraitRatio
