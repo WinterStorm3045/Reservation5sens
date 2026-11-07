@@ -67,6 +67,11 @@ html.ratio-mobile .page-shell {
   max-width: none;
 }
 
+html.ratio-mobile body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
 html.ratio-mobile main {
   width: 100%;
   max-width: none;
@@ -74,6 +79,19 @@ html.ratio-mobile main {
   margin-left: 0;
   padding-right: 32px;
   padding-left: 32px;
+}
+
+html.ratio-mobile main > :is(section, form) {
+  width: 100%;
+  min-width: 0;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+html.ratio-mobile main > *,
+html.ratio-mobile main > * > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 html.ratio-mobile main p {
@@ -1373,28 +1391,51 @@ html.ratio-mobile .site-header {
 }
 
 html.ratio-mobile .main-nav {
-  display: grid;
+  display: flex;
   width: 100%;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  flex-wrap: nowrap;
+  gap: 8px;
 }
 
 html.ratio-mobile .main-nav a {
-  width: 100%;
+  width: auto;
+  flex: 1 1 0;
   min-width: 0;
+  min-height: 84px;
+  padding: 10px 4px;
   white-space: normal;
+  overflow-wrap: anywhere;
   line-height: 1.2;
+  text-align: center;
 }
 
 html.ratio-mobile .hero {
+  width: 100%;
   max-width: none;
   margin: 40px auto 0;
   padding: 0 12px;
+  text-align: center;
+}
+
+html.ratio-mobile .event-facts {
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+html.ratio-mobile .event-facts > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 html.ratio-mobile .intro {
+  width: 100%;
   margin: 48px 0 36px;
   padding: 24px 12px;
+  text-align: center;
 }
 
 html.ratio-mobile .sense-grid {
@@ -1406,13 +1447,42 @@ html.ratio-mobile .sense-card:last-child {
 }
 
 html.ratio-mobile .page-intro {
+  width: 100%;
   margin: 40px auto 28px;
   padding: 0 8px;
+  text-align: center;
+}
+
+html.ratio-mobile main :is(h1, h2, h3) {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+html.ratio-mobile main :is(h1, h2, h3, p, a, strong, span) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+html.ratio-mobile main :is(.info-section, .contact-section, .reservation-status, .booking-total) {
+  text-align: center;
+}
+
+html.ratio-mobile .reservation-form .form-field {
+  min-width: 0;
+  text-align: left;
 }
 
 html.ratio-mobile .facts-grid {
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
+}
+
+html.ratio-mobile .fact {
+  justify-items: center;
+  text-align: center;
 }
 
 html.ratio-mobile .fact,
@@ -1426,6 +1496,7 @@ html.ratio-mobile .reservation-status {
 html.ratio-mobile .price-row {
   align-items: flex-start;
   gap: 12px;
+  text-align: left;
 }
 
 html.ratio-mobile .price-row strong {
@@ -1435,6 +1506,10 @@ html.ratio-mobile .price-row strong {
 
 html.ratio-mobile .price-row span {
   flex: 0 0 auto;
+}
+
+html.ratio-mobile .sense-card {
+  text-align: center;
 }
 
 html.ratio-mobile .person-choice {
@@ -1479,6 +1554,7 @@ html.ratio-mobile .dashboard-page {
 
 html.ratio-mobile .dashboard-page .page-intro {
   margin: 28px auto 24px;
+  text-align: center;
 }
 
 html.ratio-mobile .dashboard-page .table-wrapper {
